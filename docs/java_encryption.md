@@ -121,7 +121,7 @@ byte[] signMsg = bubiKey.sign(src.getBytes());
 请求参数：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | msg | byte[] | 待签名信息
 | privateKey | String | 私钥
 | publicKey | String | 公钥（可为null,此时CFCA不支持）
@@ -129,7 +129,7 @@ byte[] signMsg = bubiKey.sign(src.getBytes());
 返回结果：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | signMsg | byte[] | 签名后信息
 
 例如：
@@ -147,14 +147,14 @@ byte[] sign = BubiKey.sign(src.getBytes(), privateKey, publicKey);
 请求参数：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | msg | byte[] | 签名原信息
 | signMsg | byte[] | 签名后信息
 
 返回结果：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | verify | boolean | 验签结果
 
 例如：
@@ -172,7 +172,7 @@ Boolean verifyResult = bubiKey.verify(src.getBytes(), sign);
 请求参数：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | msg | byte[] | 签名原信息
 | signMsg | byte[] | 签名后信息
 | publicKey | String | 公钥
@@ -180,7 +180,7 @@ Boolean verifyResult = bubiKey.verify(src.getBytes(), sign);
 返回结果：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | verify | boolean | 验签结果
 
 例如：
@@ -202,7 +202,7 @@ Boolean verifyResult = BubiKey.verify(src.getBytes(), sign, KeyFormatType.B58, p
 返回结果：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | b58PrivateKey | String | Base58编码后的私钥
 
 例如：
@@ -220,7 +220,7 @@ String privateKey = bubiKey.getB58PrivKey();
 返回结果：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | b58PublicKey | String | Base58编码后的公钥
 
 例如：
@@ -236,13 +236,13 @@ String publicKey = bubiKey.getB58PublicKey();
 请求参数：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | b58PrivateKey或b16PrivateKey | String | Base58编码的私钥或16进制编码的私钥
 
 返回结果：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | b58PublicKey | String | Base58编码后的公钥
 
 例如：
@@ -260,7 +260,7 @@ String publicKey = BubiKey.getB58PublicKey(b58privateKey);
 返回结果：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | b58address | String | Base58编码后的地址
 
 例如：
@@ -276,13 +276,13 @@ String address = bubiKey.getB58Address();
 请求参数：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | b58PrivateKey或b16PrivateKey | String | Base58编码的私钥或16进制编码的私钥
 
 返回结果：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | b58Address | String | Base58编码后的地址
 
 例如：
