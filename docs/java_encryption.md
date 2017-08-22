@@ -1,9 +1,9 @@
 # __布比JAVA ENCRYPTIOIN使用文档__
 
-##1 用途
+## 1 用途
 用于生成公私钥和地址，以及签名，和验签
 
-##2 maven引用
+## 2 maven引用
 ```pom
     <dependency>
         <groupId>cn.bubi.baas.utils</groupId>
@@ -12,8 +12,8 @@
     </dependency>
 ```
 
-##2 构造BubiKey对象
-###2.1 签名方式构造
+## 2 构造BubiKey对象
+### 2.1 签名方式构造
 该方式的参数只有一个，就是签名方式。
 
 只有ED25519，ECCSM2，RSA支持方式，CFCA不支持。
@@ -23,7 +23,7 @@
 BubiKey bubiKey = new BubiKey(BubiKeyType.ED25519);
 ````
 
-###2.2 公钥构造
+### 2.2 公钥构造
 该方式的参数有一个，就是私钥。
 
 只有ED25519，ECCSM2，RSA支持方式，CFCA不支持。
@@ -35,7 +35,7 @@ String publicKey;
 BubiKey bubiKey = new BubiKey(privateKey);
 ```
 
-###2.3 公私钥构造
+### 2.3 公私钥构造
 该方式的参数有两个，第一个是编码后的私钥，第二个参数是编码后的公钥
 
 注意：
@@ -51,7 +51,7 @@ BubiKey bubiKey = new BubiKey(privateKey, publicKey);
 BubiKey bubiKey = new BubiKey(privateKey, null);
 ```
 
-###2.4 签名信息构造
+### 2.4 签名信息构造
 该方式的参数只有一个，就是签名信息。
 只有CFCA支持
 
@@ -61,9 +61,9 @@ byte[] sign;
 BubiKey bubiKey = new BubiKey(sign);
 ```
 
-###2.5 证书构造
+### 2.5 证书构造
 
-####2.5.1 PFX和SM2
+#### 2.5.1 PFX和SM2
 该方式的参数有三个，第一个是证书类型(PFX或SM2)，第二个是证书路径或证书内容(BASE64 编码格式或者 DER 编码格式数据)，第三个是证书访问口令。
 
 示例如下：
@@ -76,7 +76,7 @@ BubiKey bubiKey = new BubiKey(CertFileType.SM2, filePath, password);
 BubiKey bubiKey = new BubiKey(CertFileType.SM2, fileData, password);
 ````
 
-####2.5.2 JKS
+#### 2.5.2 JKS
 该方式的参数有三个，第一个是证书内容或证书路径，第二个是证书访问口令，第三个是别名。
 
 示例如下：
@@ -90,8 +90,8 @@ BubiKey bubiKey = new BubiKey(filePath, password, alias);
 BubiKey bubiKey = new BubiKey(fileData, password, alias);
 ```
 
-###3 接口详细描述
-####3.1签名（非静态）
+### 3 接口详细描述
+#### 3.1签名（非静态）
 方法名: sign
 注意：调用此方法需要构造BubiKey对象
 
@@ -114,7 +114,7 @@ String src = "test";
 byte[] signMsg = bubiKey.sign(src.getBytes());
 ```
 
-####3.2 签名（静态）
+#### 3.2 签名（静态）
 方法名: sign
 注意：调用此方法不需要构造BubiKey对象
 
@@ -140,7 +140,7 @@ String publicKey;
 byte[] sign = BubiKey.sign(src.getBytes(), privateKey, publicKey);
 ```
 
-####3.3 验签（非静态）
+#### 3.3 验签（非静态）
 方法名: verify
 注意：调用此方法需要构造BubiKey对象
 
@@ -165,7 +165,7 @@ byte[] sign = bubiKey.sign(src.getBytes());
 Boolean verifyResult = bubiKey.verify(src.getBytes(), sign);
 ```
 
-#####3.4 验签（静态）
+##### 3.4 验签（静态）
 方法名: verify
 注意：调用此方法不需要构造BubiKey对象
 
@@ -193,7 +193,7 @@ Boolean verifyResult = BubiKey.verify(src.getBytes(), sign, KeyFormatType.B58, p
 ```
 
 
-####3.5 获取B58私钥（非静态）
+#### 3.5 获取B58私钥（非静态）
 方法名：getB58PrivKey
 注意：调用此方法需要构造BubiKey对象，用于bubi 2.0程序
 
@@ -211,7 +211,7 @@ BubiKey bubiKey = new BubiKey(BubiKeyType.ECCSM2);
 String privateKey = bubiKey.getB58PrivKey();
 ```
 
-####3.6 获取B58公钥（非静态）
+#### 3.6 获取B58公钥（非静态）
 方法名：getB58PublicKey
 注意：调用此方法需要构造BubiKey对象，用于bubi 2.0程序
 
@@ -229,7 +229,7 @@ BubiKey bubiKey = new BubiKey(BubiKeyType.ECCSM2);
 String publicKey = bubiKey.getB58PublicKey();
 ```
 
-####3.7 获取B58公钥（静态）
+#### 3.7 获取B58公钥（静态）
 方法名：getB58PublicKey
 注意：调用此方法不需要构造BubiKey对象，用于bubi 2.0程序
 
@@ -251,7 +251,7 @@ String b58privateKey;
 String publicKey = BubiKey.getB58PublicKey(b58privateKey);
 ```
 
-####3.8 获取B58地址（非静态）
+#### 3.8 获取B58地址（非静态）
 方法名：getB58Address
 注意：调用此方法需要构造BubiKey对象，用于bubi 2.0程序
 
@@ -269,7 +269,7 @@ BubiKey bubiKey = new BubiKey(BubiKeyType.ECCSM2);
 String address = bubiKey.getB58Address();
 ```
 
-####3.9 获取B58地址（静态）
+#### 3.9 获取B58地址（静态）
 方法名：getB58Address
 注意：调用此方法不需要构造BubiKey对象，用于bubi 2.0程序
 
@@ -291,7 +291,7 @@ String publicKey;
 String address = bubiKey.getB58Address(publicKey);
 ```
 
-####3.10 获取B16公私钥地址
+#### 3.10 获取B16公私钥地址
 获取B16私钥、公钥、地址与B58一样，只需要将所有的B58改为B16即可，B16的私钥、公钥、地址是用于bubi 3.0。
 
 例如

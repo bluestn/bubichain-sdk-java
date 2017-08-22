@@ -1,10 +1,10 @@
 # __布比JAVA SDK使用文档__
 
-##1 用途
+## 1 用途
 该SDK用于与布比底层建立连接，可进行的操作：订阅消息、发送交易、传递消息、接收交易状态
 
-##2 maven引用
-###2.1 布比2.0版本
+## 2 maven引用
+### 2.1 布比2.0版本
 ```pom
     <dependency>
         <groupId>cn.bubi.blockchain</groupId>
@@ -12,7 +12,7 @@
     	<version>2.0.10-SNAPSHOT</version>
     </dependency>
 ```
-###2.2 布比3.0版本
+### 2.2 布比3.0版本
 ```pom
     <dependency>
         <groupId>cn.bubi.blockchain</groupId>
@@ -21,7 +21,7 @@
 	</dependency>
 ```
 	
-###3 构建BlockChainAdapter对象
+### 3 构建BlockChainAdapter对象
 BlockChainAdapter blockChainAdapter = new BlockChainAdapter(服务器URL);
 
 例如：
@@ -29,13 +29,13 @@ BlockChainAdapter blockChainAdapter = new BlockChainAdapter(服务器URL);
 BlockChainAdapter blockChainAdapter = new BlockChainAdapter("ws://127.0.0.1:7053");
 ```
 
-###4 绑定回调函数
+### 4 绑定回调函数
 blockChainAdapter.AddChainMethod(信息类型, 回调函数方法)
 
 注意：绑定消息时注意布比2.0版与布比3.0版的消息路径的区别
 
 
-####4.1 CHAIN_HELLO消息
+#### 4.1 CHAIN_HELLO消息
 该消息用于订制消息类型，解析消息时，需要用到ChainStatus数据类型，使用如下：
 
 ```java
@@ -58,7 +58,7 @@ blockChainAdapter.AddChainMethod(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, new
 });
 ```
 
-####4.2 CHAIN_TX_STATUS消息
+#### 4.2 CHAIN_TX_STATUS消息
 该消息用于接收交易状态，解析消息时，需要用到ChainTxStatus数据类型，使用如下：
 ```java
 // 布比2.0版
@@ -80,7 +80,7 @@ blockChainAdapter.AddChainMethod(Overlay.ChainMessageType.CHAIN_TX_STATUS_VALUE,
 });
 ```
 
-####4.2 CHAIN_PEER_MESSAGE消息
+#### 4.2 CHAIN_PEER_MESSAGE消息
 该消息用于节点之间传递消息，解析消息时，需要用到ChainPeerMessage数据类型，使用如下：
 ```java
 // 布比2.0版
@@ -102,12 +102,12 @@ blockChainAdapter.AddChainMethod(Overlay.ChainMessageType.CHAIN_PEER_MESSAGE_VAL
 });
 ```
 
-###5. 发送消息
+### 5. 发送消息
 blockChainAdapter.Send(信息类型， 消息内容);
 
 注意：不同的消息类型，对应的消息的数据格式不同
 
-####5.1 CHAIN_HELLO消息
+#### 5.1 CHAIN_HELLO消息
 该消息用于订制消息类型，需要用到ChainHello数据类型，使用如下：
 ```java
 // 布比2.0版
@@ -127,7 +127,7 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, chain_he
 }
 ```
 
-####5.2 CHAIN_SUBMITTRANSACTION消息
+#### 5.2 CHAIN_SUBMITTRANSACTION消息
 该消息用于向底层发送交易，需要用到TransactionEnv等数据类型，使用如下：
 ```java
 // 布比2.0版
@@ -153,7 +153,7 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VAL
 }
 ```
 
-####5.3 CHAIN_PEER_MESSAGE消息
+#### 5.3 CHAIN_PEER_MESSAGE消息
 该消息用于底层节点之间传递消息，需要用到ChainPeerMessage数据类型，使用如下：
 ```java
 // 布比2.0版
@@ -177,7 +177,7 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VAL
 }
 ```
 
-###6 发起交易的例子
+### 6 发起交易的例子
 需要添加依赖JAVA ENCRYPTIOIN:
 ```pom
 <dependency>
@@ -187,7 +187,7 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VAL
 </dependency>
 ```
 
-####6.1 创建账号
+#### 6.1 创建账号
 需要引用JAVA ENCRYPTIOI：
 ```pom
     <dependency>
@@ -197,7 +197,7 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VAL
     </dependency>
 ```
 
-#####6.1.1 布比2.0版
+##### 6.1.1 布比2.0版
 ```java
 try {
 	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
@@ -245,7 +245,7 @@ try {
 }
 ```
 
-#####6.1.1 布比3.0版
+##### 6.1.1 布比3.0版
 ```java
 try {
     String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
@@ -300,8 +300,8 @@ try {
 	chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, tranEnv.build().toByteArray());
 ```
 
-####6.2 发行资产
-#####6.2.1 布比2.0版
+#### 6.2 发行资产
+##### 6.2.1 布比2.0版
 ```java
 try {
 	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
@@ -348,7 +348,7 @@ try {
 }
 ````
 
-#####6.2.2 布比3.0版
+##### 6.2.2 布比3.0版
 ```java
 try {
 	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
@@ -390,8 +390,8 @@ try {
 }
 ```
 
-####6.3 转账
-#####6.3.1 布比2.0版
+#### 6.3 转账
+##### 6.3.1 布比2.0版
 ```java
 try {
 	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
@@ -440,7 +440,7 @@ try {
 }
 ```
 
-#####6.3.2 布比3.0版
+##### 6.3.2 布比3.0版
 ```java
 try {
 	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
