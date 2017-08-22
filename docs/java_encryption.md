@@ -98,13 +98,13 @@ BubiKey bubiKey = new BubiKey(fileData, password, alias);
 请求参数：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | msg | byte[] | 待签名信息
 
 返回结果：
 
 |变量|类型|描述
-|:--- | --- | --- | --- 
+|:--- | --- | --- 
 | signMsg | byte[] | 签名后信息
 
 例如：
