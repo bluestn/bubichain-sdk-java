@@ -3,25 +3,20 @@
 ## 1 用途
 该SDK用于与布比底层建立连接，可进行的操作：订阅消息、发送交易、传递消息、接收交易状态
 
-## 2 maven引用
-### 2.1 布比2.0版本
-```pom
-    <dependency>
-        <groupId>cn.bubi.blockchain</groupId>
-        <artifactId>blockchain-sdk</artifactId>
-    	<version>2.0.10-SNAPSHOT</version>
-    </dependency>
-```
-### 2.2 布比3.0版本
-```pom
-    <dependency>
-        <groupId>cn.bubi.blockchain</groupId>
-        <artifactId>blockchain-sdk3</artifactId>
-    	<version>2.0.10-SNAPSHOT</version>
-	</dependency>
-```
-	
-### 3 构建BlockChainAdapter对象
+## 2 文档使用说明
+1. 了解接口说明的请看目录2 - 5
+2. 了解使用步骤的请看目录6 - 8
+
+## 3 依赖的jar包
+所依赖的jar包在jar文件夹中寻找，jar包简介:
+
+1. sadk-3.2.3.0.RELEASE.jar，用于CFCA的签名操作
+2. utils-encryption-1.3.12-SNAPSHOT.jar，请看java_encryption.md
+3. blockchain-protobuf-3.1.8-SNAPSHOT.jar，布比2.0版依赖的数据结构
+4. blockchain-protobuf3-3.1.8-SNAPSHOT.jar，布比3.0版依赖的数据结构
+
+
+### 4 构建BlockChainAdapter对象
 BlockChainAdapter blockChainAdapter = new BlockChainAdapter(服务器URL);
 
 例如：
@@ -29,20 +24,20 @@ BlockChainAdapter blockChainAdapter = new BlockChainAdapter(服务器URL);
 BlockChainAdapter blockChainAdapter = new BlockChainAdapter("ws://127.0.0.1:7053");
 ```
 
-### 4 绑定回调函数
+### 5 绑定回调函数
 blockChainAdapter.AddChainMethod(信息类型, 回调函数方法)
 
 注意：绑定消息时注意布比2.0版与布比3.0版的消息路径的区别
 
 
-#### 4.1 CHAIN_HELLO消息
+#### 5.1 CHAIN_HELLO消息
 该消息用于订制消息类型，解析消息时，需要用到ChainStatus数据类型，使用如下：
 
 ```java
 // 布比2.0版
 blockChainAdapter.AddChainMethod(Message.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
 	public void ChainMethod (byte[] msg, int length) {
-		//处理 hello消息
+		//处理 CHAIN_HELLO消息
 		Message.ChainStatus chainStatus = Message.ChainStatus.parseFrom(msg);
 	}
 });
@@ -52,19 +47,19 @@ blockChainAdapter.AddChainMethod(Message.ChainMessageType.CHAIN_HELLO_VALUE, new
 // 布比3.0版
 blockChainAdapter.AddChainMethod(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
 	public void ChainMethod (byte[] msg, int length) {
-		//处理 hello消息
+		//处理 CHAIN_HELLO消息
 		Overlay.ChainStatus chainStatus = Overlay.ChainStatus.parseFrom(msg);
 	}
 });
 ```
 
-#### 4.2 CHAIN_TX_STATUS消息
+#### 5.2 CHAIN_TX_STATUS消息
 该消息用于接收交易状态，解析消息时，需要用到ChainTxStatus数据类型，使用如下：
 ```java
 // 布比2.0版
 blockChainAdapter.AddChainMethod(Message.ChainMessageType.CHAIN_TX_STATUS_VALUE, new BlockChainAdapterProc() {
 	public void ChainMethod (byte[] msg, int length) {
-		//处理 hello消息
+		//处理 CHAIN_TX_STATUS消息
 		Message.ChainTxStatus chainTxStatus = Message.ChainTxStatus.parseFrom(msg);
 	}
 });
@@ -74,19 +69,19 @@ blockChainAdapter.AddChainMethod(Message.ChainMessageType.CHAIN_TX_STATUS_VALUE,
 // 布比3.0版
 blockChainAdapter.AddChainMethod(Overlay.ChainMessageType.CHAIN_TX_STATUS_VALUE, new BlockChainAdapterProc() {
 	public void ChainMethod (byte[] msg, int length) {
-		//处理 hello消息
+		//处理 CHAIN_TX_STATUS消息
 		Overlay.ChainTxStatus chainTxStatus = Overlay.ChainTxStatus.parseFrom(msg);
 	}
 });
 ```
 
-#### 4.2 CHAIN_PEER_MESSAGE消息
+#### 5.3 CHAIN_PEER_MESSAGE消息
 该消息用于节点之间传递消息，解析消息时，需要用到ChainPeerMessage数据类型，使用如下：
 ```java
 // 布比2.0版
 blockChainAdapter.AddChainMethod(Message.ChainMessageType.CHAIN_PEER_MESSAGE_VALUE, new BlockChainAdapterProc() {
 	public void ChainMethod (byte[] msg, int length) {
-		//处理 hello消息
+		//处理 CHAIN_PEER_MESSAGE消息
 		Message.ChainPeerMessage chainPeerMessage = Message.ChainPeerMessage.parseFrom(msg);
 	}
 });
@@ -96,18 +91,18 @@ blockChainAdapter.AddChainMethod(Message.ChainMessageType.CHAIN_PEER_MESSAGE_VAL
 // 布比3.0版
 blockChainAdapter.AddChainMethod(Overlay.ChainMessageType.CHAIN_PEER_MESSAGE_VALUE, new BlockChainAdapterProc() {
 	public void ChainMethod (byte[] msg, int length) {
-		//处理 hello消息
+		//处理 CHAIN_PEER_MESSAGE消息
 		Overlay.ChainPeerMessage chainPeerMessage = Overlay.ChainPeerMessage.parseFrom(msg);
 	}
 });
 ```
 
-### 5. 发送消息
+### 6. 发送消息
 blockChainAdapter.Send(信息类型， 消息内容);
 
 注意：不同的消息类型，对应的消息的数据格式不同
 
-#### 5.1 CHAIN_HELLO消息
+#### 6.1 CHAIN_HELLO消息
 该消息用于订制消息类型，需要用到ChainHello数据类型，使用如下：
 ```java
 // 布比2.0版
@@ -127,7 +122,7 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, chain_he
 }
 ```
 
-#### 5.2 CHAIN_SUBMITTRANSACTION消息
+#### 6.2 CHAIN_SUBMITTRANSACTION消息
 该消息用于向底层发送交易，需要用到TransactionEnv等数据类型，使用如下：
 ```java
 // 布比2.0版
@@ -153,8 +148,8 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VAL
 }
 ```
 
-#### 5.3 CHAIN_PEER_MESSAGE消息
-该消息用于底层节点之间传递消息，需要用到ChainPeerMessage数据类型，使用如下：
+#### 6.3 CHAIN_PEER_MESSAGE消息
+该消息用于底层节点之间传递消息,允许添加多个目标节点地址，需要用到ChainPeerMessage数据类型，使用如下：
 ```java
 // 布比2.0版
 Message.ChainPeerMessage.Builder chain_peer_message = Message.ChainPeerMessage.newBuilder(); 
@@ -177,7 +172,44 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VAL
 }
 ```
 
-### 6 发起交易的例子
+### 7 使用步骤
+请配合代码中的chain_test.java使用
+
+#### 7.1 定义BlockChainAdapter对象
+```java
+private BlockChainAdapter chain_message_one_;
+chain_message_one_ = new BlockChainAdapter("ws://127.0.0.1:7053");
+```
+
+#### 7.2 绑定回调函数
+目前支持的回调类型：
+CHAIN_HELLO_VALUE，CHAIN_TX_STATUS_VALUE，CHAIN_PEER_MESSAGE_VALUE
+
+```java
+chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
+	public void ChainMethod (byte[] msg, int length) {
+		//OnChainHello(msg, length);
+	}
+});
+chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_TX_STATUS_VALUE, new BlockChainAdapterProc() {
+	public void ChainMethod (byte[] msg, int length) {
+		//OnChainTxStatus(msg, length);
+	}
+});
+chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_PEER_MESSAGE_VALUE, new BlockChainAdapterProc() {
+	public void ChainMethod (byte[] msg, int length) {
+		//OnChainPeerMessage(msg, length);
+	}
+});
+```
+
+#### 7.4 发送交易
+参照下面的目录7 “发起交易的例子”
+
+#### 7.5 传递消息
+参照下面的目录8 "节点间传递消息的例子"
+
+### 8 发起交易的例子
 需要添加依赖JAVA ENCRYPTIOIN:
 ```pom
 <dependency>
@@ -187,7 +219,7 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VAL
 </dependency>
 ```
 
-#### 6.1 创建账号
+#### 8.1 创建账号
 需要引用JAVA ENCRYPTIOI：
 ```pom
     <dependency>
@@ -197,7 +229,7 @@ if (!blockChainAdapter.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VAL
     </dependency>
 ```
 
-##### 6.1.1 布比2.0版
+##### 8.1.1 布比2.0版
 ```java
 try {
 	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
@@ -245,11 +277,11 @@ try {
 }
 ```
 
-##### 6.1.1 布比3.0版
+##### 8.1.1 布比3.0版
 ```java
 try {
-    String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
-	String address = "bubiV8i2558GmfnBREe87ZagdkKsfeJh5HYjcNpa";
+    String privateKey = "8df1e02a896ecfcb872dad4dcce75da603b0b906ffe832e53c70a0f94cae54b29c1402cb342e82f3a68ecdf64dfc50a06cebcd610270bd9981c0bc690d6e5e40638e743fadce301878431eed485bfde1";
+	String address = "a001ce7e78f5c1d80878bee952b1dc75eb942c9ebed47a";
 	String httpRequest = "http://127.0.0.1:19333";
 	
 	// getAccount
@@ -300,8 +332,8 @@ try {
 	chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, tranEnv.build().toByteArray());
 ```
 
-#### 6.2 发行资产
-##### 6.2.1 布比2.0版
+#### 8.2 发行资产
+##### 8.2.1 布比2.0版
 ```java
 try {
 	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
@@ -348,11 +380,11 @@ try {
 }
 ````
 
-##### 6.2.2 布比3.0版
+##### 8.2.2 布比3.0版
 ```java
 try {
-	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
-	String address = "bubiV8i2558GmfnBREe87ZagdkKsfeJh5HYjcNpa";
+	String privateKey = "c004e64b5b674eacf176d80cbbb9e427521cc228797d3351834a62cb8929c254ec7f60";
+	String address = "a00415a62412ab9617b369b7c3832bb240b4f6a53b79f5";
 	String httpRequest = "http://127.0.0.1:19333";
 	String getAccount = url + "/getAccount?address=" + address;
 	String txSeq = HttpKit.post(getAccount, "");
@@ -390,8 +422,8 @@ try {
 }
 ```
 
-#### 6.3 转账
-##### 6.3.1 布比2.0版
+#### 8.3 转账
+##### 8.3.1 布比2.0版
 ```java
 try {
 	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
@@ -440,12 +472,12 @@ try {
 }
 ```
 
-##### 6.3.2 布比3.0版
+##### 8.3.2 布比3.0版
 ```java
 try {
-	String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
-	String address = "bubiV8i2558GmfnBREe87ZagdkKsfeJh5HYjcNpa";
-	String destAddress = "bubiQ0i2558GmfnBREe87ZagdkKsfeJh5HHijops";
+	String privateKey = "c004e64b5b674eacf176d80cbbb9e427521cc228797d3351834a62cb8929c254ec7f60";
+	String address = "a00415a62412ab9617b369b7c3832bb240b4f6a53b79f5";
+	String destAddress = "a001f8a08bb1ce8085a22eaba4bbc3ba8a5f6e94033bc8";
 	String httpRequest = "http://127.0.0.1:19333";
 	
     // get tx sequence number
@@ -489,3 +521,57 @@ try {
 }
 ```
 
+### 9 节点间传递消息的例子
+假如有两个应用A和B，一个应用A绑定了节点A(127.0.0.1:7053)，另一应用B绑定了节点B(127.0.0.1:7063)，节点A和节点B必须要同一链上
+
+```java
+String AddressA = "bubiV8i2558GmfnBREe87ZagdkKsfeJh5HYjcNpa"; // 节点A的地址
+String AddressB = "bubiV8i2MLZd5ahDGay6oAZHiMyYNUkJfSiTAmJy" // 节点B的地址
+private BlockChainAdapter chain_message_one_;
+private BlockChainAdapter chain_message_two_;
+
+chain_message_one_ = new BlockChainAdapter("ws://127.0.0.1:7053");
+chain_message_two_ = new BlockChainAdapter("ws://127.0.0.1:7063");
+
+// 应用A绑定CHAIN_PEER_MESSAGE_VALUE消息
+chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_PEER_MESSAGE_VALUE, new BlockChainAdapterProc() {
+	public void ChainMethod (byte[] msg, int length) {
+        try {
+        		Overlay.ChainPeerMessage chain_peer_message = Overlay.ChainPeerMessage.parseFrom(msg);
+        		System.out.println(new String(chain_peer_message.getData().toByteArray()));
+    	} catch (Exception e) {
+	    }
+	}
+});
+
+// 应用B绑定CHAIN_PEER_MESSAGE_VALUE消息
+chain_message_two_.AddChainMethod(Overlay.ChainMessageType.CHAIN_PEER_MESSAGE_VALUE, new BlockChainAdapterProc() {
+	public void ChainMethod (byte[] msg, int length) {
+        try {
+        		Overlay.ChainPeerMessage chain_peer_message = Overlay.ChainPeerMessage.parseFrom(msg);
+        		System.out.println(new String(chain_peer_message.getData().toByteArray()));
+    	} catch (Exception e) {
+	    }
+	}
+});
+
+// 布比2.0版
+Message.ChainPeerMessage.Builder chain_peer_message = Message.ChainPeerMessage.newBuilder(); 
+chain_peer_message.setSrcPeerAddr(AddressA); // 绑定节点A的地址，也可为null
+chain_peer_message.addDesPeerAddrs(AddressB); // 绑定节点B的地址，不可为null
+chain_peer_message.setData(ByteString.copyFromUtf8("test"));
+if (!chain_message_one_.Send(Message.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, chain_peer_message.build().toByteArray())) {
+	// 错误输出
+}
+
+// 布比3.0版
+Overlay.ChainPeerMessage.Builder chain_peer_message3 = Overlay.ChainPeerMessage.newBuilder(); 
+chain_peer_message3.setSrcPeerAddr(AddressA); // 绑定节点A的地址，也可为null
+chain_peer_message3.addDesPeerAddrs(AddressB); // 绑定节点B的地址，不可为null
+chain_peer_message3.setData(ByteString.copyFromUtf8("test"));
+if (!chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, chain_peer_message3.build().toByteArray())) {
+	// 错误输出
+}
+```
+
+发送完成后，应用B绑定的CHAIN_PEER_MESSAGE_VALUE消息的回调函数，就会打印出test

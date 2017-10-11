@@ -45,8 +45,7 @@ import cn.bubi.blockchain.adapter3.Chain.Transaction;
 import cn.bubi.blockchain.adapter3.Chain.TransactionEnv;
 
 public class chain_test {
-	private ChainMessageEx chain_message_one_;
-	//private ChainMessageEx chain_message_two_;
+	private BlockChainAdapter chain_message_one_;
 	private Object object_;
 	private Timer timer_;
 	private Logger logger_;
@@ -61,9 +60,7 @@ public class chain_test {
 		
 		logger_ = LoggerFactory.getLogger(BlockChainAdapter.class);
 		object_ = new Object();
-		//chain_message_one_ = new ChainMessageEx("ws://192.168.10.215:7053");
-		chain_message_one_ = new ChainMessageEx("ws://127.0.0.1:7053");
-//		chain_message_two_ = new ChainMessageEx("192.168.168.4:4053", "192.168.168.4:4054", 10);
+		chain_message_one_ = new BlockChainAdapter("ws://127.0.0.1:7053");
 		chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
 			public void ChainMethod (byte[] msg, int length) {
 				OnChainHello(msg, length);
@@ -80,24 +77,20 @@ public class chain_test {
 			}
 		});
 		
-		if (!chain_message_one_.isBhello_()) {
-			Overlay.ChainHello.Builder chain_hello = Overlay.ChainHello.newBuilder();
-			chain_hello.setTimestamp(System.currentTimeMillis());
-			if (!chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_HELLO.getNumber(), chain_hello.build().toByteArray())) {
-				logger_.error("send hello failed");
-			}
+		Overlay.ChainHello.Builder chain_hello = Overlay.ChainHello.newBuilder();
+		chain_hello.setTimestamp(System.currentTimeMillis());
+		if (!chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_HELLO.getNumber(), chain_hello.build().toByteArray())) {
+			logger_.error("send hello failed");
 		}
 	}
 	private void OnChainHello(byte[] msg, int length) {
 		try {
 			//Overlay.ChainStatus chain_status = Overlay.ChainStatus.parseFrom(msg);
 			logger_.info("=================receive hello info============");
-			//chain_message_.Stop();
 		} catch (Exception e) {
 			logger_.error(e.getMessage());
 			e.printStackTrace();
 		}
-		//chain_message.setBhello_(true);
 	}
 	
 	private void OnChainPeerMessage(byte[] msg, int length) {
@@ -105,7 +98,6 @@ public class chain_test {
 			Overlay.ChainPeerMessage chain_peer_message = Overlay.ChainPeerMessage.parseFrom(msg);
 			logger_.info("=================receive peer message info============");
 			logger_.info(chain_peer_message.toString());
-			//chain_message_.Stop();
 		} catch (InvalidProtocolBufferException e) {
 			logger_.error(e.getMessage());
 		}
@@ -118,9 +110,8 @@ public class chain_test {
 		try {
 			Overlay.ChainTxStatus chain_tx_status = Overlay.ChainTxStatus.parseFrom(msg);
 			if (chain_tx_status.getStatus() == Overlay.ChainTxStatus.TxStatus.FAILURE || chain_tx_status.getStatus() == Overlay.ChainTxStatus.TxStatus.COMPLETE) {
-				System.out.println("receive time:" + System.currentTimeMillis() + ", chain_tx_status.status--" + chain_tx_status.getTxHash() + "," + chain_tx_status.getStatus() + "," + chain_tx_status.getErrorDesc());
+				logger_.info("receive time:" + System.currentTimeMillis() + ", chain_tx_status.status--" + chain_tx_status.getTxHash() + "," + chain_tx_status.getStatus() + "," + chain_tx_status.getErrorDesc());
 			}
-			//logger_.info("chain_tx_status.status--" + chain_tx_status);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
