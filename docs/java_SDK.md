@@ -8,12 +8,14 @@
 2. 了解使用步骤的请看目录6 - 8
 
 ## 3 依赖的jar包
-所依赖的jar包在jar文件夹中寻找，jar包简介:
+所依赖的jar包在jar文件夹中寻找，依赖的jar包如下：
 
 1. sadk-3.2.3.0.RELEASE.jar，用于CFCA的签名操作
 2. utils-encryption-1.3.12-SNAPSHOT.jar，请看java_encryption.md
 3. blockchain-protobuf-3.1.8-SNAPSHOT.jar，布比2.0版依赖的数据结构
 4. blockchain-protobuf3-3.1.8-SNAPSHOT.jar，布比3.0版依赖的数据结构
+5. eddsa-0.1.0.jar：ed25519签名包
+6. bcprov-jdk15on-1.52.jar：证书操作依赖包
 
 
 ### 4 构建BlockChainAdapter对象

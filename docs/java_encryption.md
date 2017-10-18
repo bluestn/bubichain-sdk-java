@@ -3,14 +3,13 @@
 ## 1 用途
 用于生成公私钥和地址，以及签名，和验签
 
-## 2 maven引用
-```pom
-    <dependency>
-        <groupId>cn.bubi.baas.utils</groupId>
-        <artifactId>utils-encryption</artifactId>
-        <version>1.3.12-SNAPSHOT</version>
-    </dependency>
-```
+## 2 jar包引用
+所依赖的jar包在jar文件夹中寻找，依赖的jar包如下：
+
+1. utils-encryption-1.3.12-SNAPSHOT.jar:BubiKey的相关操作，详细请看下面介绍
+2. sadk-3.2.3.0.RELEASE.jar:用于CFCA的签名操作
+3. eddsa-0.1.0.jar：ed25519签名包
+4. bcprov-jdk15on-1.52.jar：证书操作依赖包
 
 ## 2 构造BubiKey对象
 ### 2.1 签名方式构造
