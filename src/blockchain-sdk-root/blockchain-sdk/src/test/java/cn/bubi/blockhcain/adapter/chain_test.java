@@ -15,7 +15,6 @@ package cn.bubi.blockhcain.adapter;
 
 
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,7 +52,7 @@ public class chain_test {
 		logger_ = LoggerFactory.getLogger(BlockChainAdapter.class);
 		object_ = new Object();
 		chain_message_one_ = new ChainMessageEx("ws://192.168.10.120:7053");
-		chain_message_one_.AddChainMethod(Message.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
+		chain_message_one_.AddChainResponseMethod(Message.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
 			public void ChainMethod (byte[] msg, int length) {
 				OnChainHello(chain_message_one_, msg, length);
 			}
@@ -77,6 +76,7 @@ public class chain_test {
 			}
 		}
 	}
+	@SuppressWarnings("unused")
 	private void OnChainHello(ChainMessageEx chain_message, byte[] msg, int length) {
 		try {
 			Message.ChainStatus chain_status = Message.ChainStatus.parseFrom(msg);

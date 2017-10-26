@@ -32,6 +32,7 @@ import cn.bubi.baas.utils.encryption.utils.HttpKit;
 import cn.bubi.blockchain.adapter.BlockChainAdapter;
 import cn.bubi.blockchain.adapter.BlockChainAdapterProc;
 import cn.bubi.blockchain.adapter3.Common.Signature;
+import cn.bubi.blockchain.adapter3.Chain;
 import cn.bubi.blockchain.adapter3.Overlay;
 import cn.bubi.blockchain.adapter3.Chain.AccountPrivilege;
 import cn.bubi.blockchain.adapter3.Chain.AccountThreshold;
@@ -61,7 +62,7 @@ public class chain_test {
 		logger_ = LoggerFactory.getLogger(BlockChainAdapter.class);
 		object_ = new Object();
 		chain_message_one_ = new BlockChainAdapter("ws://127.0.0.1:7053");
-		chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
+		chain_message_one_.AddChainResponseMethod(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
 			public void ChainMethod (byte[] msg, int length) {
 				OnChainHello(msg, length);
 			}
@@ -76,6 +77,11 @@ public class chain_test {
 				OnChainPeerMessage(msg, length);
 			}
 		});
+		chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_LEDGER_HEADER_VALUE, new BlockChainAdapterProc() {
+			public void ChainMethod (byte[] msg, int length) {
+				OnChainLedgerHeader(msg, length);
+			}
+		});
 		
 		Overlay.ChainHello.Builder chain_hello = Overlay.ChainHello.newBuilder();
 		chain_hello.setTimestamp(System.currentTimeMillis());
@@ -85,8 +91,8 @@ public class chain_test {
 	}
 	private void OnChainHello(byte[] msg, int length) {
 		try {
-			//Overlay.ChainStatus chain_status = Overlay.ChainStatus.parseFrom(msg);
-			logger_.info("=================receive hello info============");
+			Overlay.ChainStatus chain_status = Overlay.ChainStatus.parseFrom(msg);
+			System.out.println(chain_status);
 		} catch (Exception e) {
 			logger_.error(e.getMessage());
 			e.printStackTrace();
@@ -112,6 +118,16 @@ public class chain_test {
 			if (chain_tx_status.getStatus() == Overlay.ChainTxStatus.TxStatus.FAILURE || chain_tx_status.getStatus() == Overlay.ChainTxStatus.TxStatus.COMPLETE) {
 				logger_.info("receive time:" + System.currentTimeMillis() + ", chain_tx_status.status--" + chain_tx_status.getTxHash() + "," + chain_tx_status.getStatus() + "," + chain_tx_status.getErrorDesc());
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void OnChainLedgerHeader(byte[] msg, int length) {
+		try {
+			Chain.LedgerHeader ledger_header = Chain.LedgerHeader.parseFrom(msg);
+			logger_.info("================" + ledger_header.toString());
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -174,6 +190,7 @@ public class chain_test {
 		return bubikey_new;
 	}
 	
+	@SuppressWarnings("unused")
 	public BubiKey TestIssue(String url, String srcAddress, String srcPrivate, String srcPublic, 
 			int masterWeight, int threshold, BubiKeyType algorithm, CertFileType certFileType, String certFile, String password) {
 		BubiKey bubikey_new = null;
@@ -267,6 +284,7 @@ public class chain_test {
 	public void OnTimer() {
 		timer_ = new Timer();
 		timer_.schedule(new TimerTask() {
+			@SuppressWarnings("unused")
 			@Override
 			public void run() {
 				//String url = "http://192.168.10.215:19333";
@@ -275,7 +293,7 @@ public class chain_test {
 				String publicKey = "b0019798ea08b3286e1dac0c52f98c93388c946ee606878d2a538aaf7623aac5c9f8e1";
 				String address = "a002d8345b89dc34a57574eb497635ff125a3799fe77b6";
 				
-				TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ECCSM2, null, null, null);
+				//TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ECCSM2, null, null, null);
 			}
 		}, 1000, 10000);
 	}
