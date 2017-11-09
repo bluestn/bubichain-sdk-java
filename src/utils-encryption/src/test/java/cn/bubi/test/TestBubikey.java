@@ -1,8 +1,6 @@
 package cn.bubi.test;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import org.bouncycastle.util.encoders.Base64;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -11,61 +9,68 @@ import cfca.sadk.algorithm.util.FileUtil;
 import cn.bubi.baas.utils.encryption.BubiKey;
 import cn.bubi.baas.utils.encryption.BubiKeyType;
 import cn.bubi.baas.utils.encryption.CertFileType;
-import cn.bubi.baas.utils.encryption.KeyFormatType;
+import cn.bubi.baas.utils.encryption.utils.HashUtil;
 import cn.bubi.baas.utils.encryption.utils.HttpKit;
 import cn.bubi.blockchain.adapter3.Chain.*;
 
 public class TestBubikey {
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
+
 		// test signature and verify
-		System.out.println("================ test b58 ed25519 ==================");
-		testB58_ED25519();
-		System.out.println("================ test b16 ed25519 ==================");
-		testB16_ED25519();
-		System.out.println("");
+//		System.out.println("================ test b58 ed25519 ==================");
+//		testB58_ED25519();
+//		System.out.println("================ test b16 ed25519 ==================");
+//		testB16_ED25519();
+//		System.out.println("");
+//		
+//		System.out.println("\n\n================ test b58 eccsm2 ==================");
+//		testB58_ECCSM2();
+//		System.out.println("================ test b16 eccsm2 ==================");
+//		testB16_ECCSM2();
+//		System.out.println("");
 		
-		System.out.println("\n\n================ test b58 eccsm2 ==================");
-		testB58_ECCSM2();
-		System.out.println("================ test b16 eccsm2 ==================");
-		testB16_ECCSM2();
-		System.out.println("");
+//		System.out.println("\n\n================ test b58 cfca pfx ==================");
+//		testB58_CFCA_pfx();
+//		System.out.println("================ test b16 cfca pfx ==================");
+//		testB16_CFCA_pfx();
+//		System.out.println("");
 		
-		System.out.println("\n\n================ test b58 cfca pfx ==================");
-		testB58_CFCA_pfx();
-		System.out.println("================ test b16 cfca pfx ==================");
-		testB16_CFCA_pfx();
-		System.out.println("");
-		
-		System.out.println("\n\n================ test b58 cfca sm2 ==================");
-		testB58_CFCA_SM2();
-		System.out.println("================ test b16 cfca sm2 ==================");
-		testB16_CFCA_SM2();
-		System.out.println("");
-		
-		System.out.println("\n\n================ test b58 cfca jks ==================");
-		testB58_CFCA_JKS();
-		System.out.println("================ test b16 cfca jks ==================");
-		testB16_CFCA_JKS();
-		
-		// test create account transaction
-		System.out.println("\n\n================ teat create account ==================");
-		String url = "http://127.0.0.1:29333";
-		String privateKey = "c0015ed4d20945d47d0b8708bcad5b94f83a75504ee5f5d71d80fc8189aadf71203497";
-		String publicKey = "b001671bbc4fb156f701a2a4f8fbc331d27bc8861a43ae56bcfc5a3ae9bdbb03d1be13";
-		String address = "a0017bb37115637686a4efd6fabe8bfd74d695c3616515";
-		BubiKey bubiKey_new = TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ED25519, CertFileType.SM2, 
-				"D:/bubi/Peer2.SM2", "cfca1234");
-		System.out.println(bubiKey_new.getB16Address());
-		Thread.sleep(2000);
-		BubiKey bubiKey_one = TestCreateAccount(url, bubiKey_new.getB16Address(), bubiKey_new.getB16PrivKey(), 
-				bubiKey_new.getB16PublicKey(), 10, 1, BubiKeyType.CFCA, CertFileType.SM2, "D:/bubi/Peer3.SM2", "cfca1234");
-		System.out.println(bubiKey_one.getB16Address());
+//		System.out.println("\n\n================ test b58 cfca sm2 ==================");
+//		testB58_CFCA_SM2();
+//		System.out.println("================ test b16 cfca sm2 ==================");
+//		testB16_CFCA_SM2();
+//		System.out.println("");
+//		
+//		System.out.println("\n\n================ test b58 cfca jks ==================");
+//		testB58_CFCA_JKS();
+//		System.out.println("================ test b16 cfca jks ==================");
+//		testB16_CFCA_JKS();
+//		
+//		// test create account transaction
+//		System.out.println("\n\n================ teat create account ==================");
+//		String url = "http://192.168.10.110:29333";
+//		String privateKey = "c0015ed4d20945d47d0b8708bcad5b94f83a75504ee5f5d71d80fc8189aadf71203497";
+//		String publicKey = "b001671bbc4fb156f701a2a4f8fbc331d27bc8861a43ae56bcfc5a3ae9bdbb03d1be13";
+//		String address = "a0017bb37115637686a4efd6fabe8bfd74d695c3616515";
+//		BubiKey bubiKey_new = TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ED25519, CertFileType.SM2, 
+//				"D:/bubi/Peer2.SM2", "cfca1234");
+//		System.out.println(bubiKey_new.getB16Address());
+//		Thread.sleep(2000);
+//		BubiKey bubiKey_one = TestCreateAccount(url, bubiKey_new.getB16Address(), bubiKey_new.getB16PrivKey(), 
+//				bubiKey_new.getB16PublicKey(), 10, 1, BubiKeyType.CFCA, CertFileType.SM2, "D:/bubi/Peer3.SM2", "cfca1234");
+//		System.out.println(bubiKey_one.getB16Address());
 	}
 	
 	public static BubiKey TestCreateAccount(String url, String srcAddress, String srcPrivate, String srcPublic, 
 			int masterWeight, int threshold, BubiKeyType algorithm, CertFileType certFileType, String certFile, String password) {
 		BubiKey bubikey_new = null;
 		try {
+			// get hash type
+			String getHello = url + "/hello";
+			String hello = HttpKit.post(getHello, "");
+			JSONObject ho = JSONObject.parseObject(hello);
+			Integer hash_type = ho.containsKey("hash_type") ? ho.getInteger("hash_type") : 0;
+			
 			// getAccount
 			String getAccount = url + "/getAccount?address=" + srcAddress;
 			String txSeq = HttpKit.post(getAccount, "");
@@ -104,6 +109,11 @@ public class TestBubikey {
 			createAccount.setDestAddress(newAccountAddress);
 			oper.setCreateAccount(createAccount);
 			
+			// generate hex string of transaction's hash
+			String hash = HashUtil.GenerateHashHex(tran.build().toByteArray(), hash_type);
+			System.out.println("transaction hash: " + hash);
+			
+			// add transaction with signature
 			JSONObject request = new JSONObject();
 			JSONArray items = new JSONArray();
 			JSONObject item = new JSONObject();
@@ -253,8 +263,8 @@ public class TestBubikey {
 		
 		try {
 			System.out.println("=========================cert file data==================================");
-			byte fileData[] = FileUtil.getBytesFromFile("D:/test.pfx");
-			BubiKey bubiKey = new BubiKey(CertFileType.PFX, fileData, "11111111");
+			byte fileData[] = FileUtil.getBytesFromFile("D:/mytest_ex.pfx");
+			BubiKey bubiKey = new BubiKey(CertFileType.PFX, fileData, "111111");
 			System.out.println("bubuKey1 private key: " + bubiKey.getB58PrivKey());
 			System.out.println("bubuKey1 public key: " + bubiKey.getB58PublicKey());
 			System.out.println("bubuKey1 address: " + bubiKey.getB58Address());
@@ -268,7 +278,7 @@ public class TestBubikey {
 			System.out.println("bubuKey2 address: " + bubiKey2.getB58Address());
 			
 			System.out.println("=========================cert file path==================================");
-			BubiKey bubiKey3 = new BubiKey(CertFileType.PFX, "D:/test.pfx", "11111111");
+			BubiKey bubiKey3 = new BubiKey(CertFileType.PFX, "D:/mytest_ex.pfx", "111111");
 			System.out.println("bubuKey3 private key: " + bubiKey3.getB58PrivKey());
 			System.out.println("bubuKey3 public key: " + bubiKey3.getB58PublicKey());
 			System.out.println("bubuKey3 address: " + bubiKey3.getB58Address());
