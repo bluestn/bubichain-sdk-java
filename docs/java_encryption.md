@@ -316,8 +316,13 @@ String addressStatic = bubiKey.getB16Address(publicKey);
 
 例如
 ```java
+String url="127.0.0.1:19333";
+String getHello = url + "/hello";
+String hello = HttpKit.post(getHello, "");
+JSONObject ho = JSONObject.parseObject(hello);
+Integer hash_type = ho.containsKey("hash_type") ? ho.getInteger("hash_type") : 0;
 Transaction.Builder tran = Transaction.newBuilder();
-String hash = HashUtil.GenerateHashHex(tran.build().toByteArray(), 0);
+String hash = HashUtil.GenerateHashHex(tran.build().toByteArray(), hash_type);
 ```
 
 若要获取bubi底层的hash类型，需要访问http的hello接口，会返回hash类型
