@@ -64,4 +64,28 @@ public class Sm2keyCFCA extends Sm2Key {
 		return ecParameterSpec;
 	}
 
+	
+	public static ECParameterSpec testCurve() {
+		// 素数P
+		BigInteger p = new BigInteger("8542D69E4C044F18E8B92435BF6FF7DE457283915C45517D722EDB8B08F1DFC3", 16);
+
+		// 基于素数P的有限域
+		ECFieldFp gfp = new ECFieldFp(p);
+
+		// 在有限域上的椭圆曲线y2 = x3 + ax + b
+		EllipticCurve ellipticCurve = new EllipticCurve(gfp,
+				new BigInteger("787968B4FA32C3FD2417842E73BBFEFF2F3C848B6831D7E0EC65228B3937E498", 16),
+				new BigInteger("63E4C6D3B23B0C849CF84241484BFE48F61D59A5B16BA06E6E12D1DA27C5249A", 16));
+
+		// 基点G
+		ECPoint G = new ECPoint(new BigInteger("421DEBD61B62EAB6746434EBC3CC315E32220B3BADD50BDC4C4E6C147FEDD43D", 16),
+				new BigInteger("0680512BCBB42C07D47349D2153B70C4E5D7FDFCBFA36EA1A85841B9E46E09A2", 16));
+
+		// G的阶
+		BigInteger n = new BigInteger("8542D69E4C044F18E8B92435BF6FF7DD297720630485628D5AE74EE7C32E79B7", 16);
+
+		// 设置基点
+		ECParameterSpec ecParameterSpec = new ECParameterSpec(ellipticCurve, G, n, 1);
+		return ecParameterSpec;
+	}
 }
