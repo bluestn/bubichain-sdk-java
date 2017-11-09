@@ -302,3 +302,22 @@ String publicKeyStatic = BubiKey.getB16PublicKey(privateKey);
 String address = bubiKey.getB16Address();
 String addressStatic = bubiKey.getB16Address(publicKey);
 ```
+
+#### 3.11 计算hash
+方法名：GenerateHashHex
+路径：cn.bubi.baas.utils.encryption.utils.HashUtil
+
+请求参数：
+
+|变量|类型|描述
+|:--- | --- | --- 
+| src | byte[] | 待计算的字节数组，在布比中是交易的序列化字节数组
+| type | Integer | hash类型,0是sha-256,1是sm3
+
+例如
+```java
+Transaction.Builder tran = Transaction.newBuilder();
+String hash = HashUtil.GenerateHashHex(tran.build().toByteArray(), 0);
+```
+
+若要获取bubi底层的hash类型，需要访问http的hello接口，会返回hash类型
