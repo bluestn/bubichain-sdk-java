@@ -14,9 +14,6 @@ limitations under the License.
 package cn.bubi.blockhcain.adapter;
 
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,14 +44,24 @@ import cn.bubi.blockchain.adapter3.Chain.TransactionEnv;
 
 public class chain_test {
 	private BlockChainAdapter chain_message_one_;
+	private TestThread test_thread = new TestThread();
 	private Object object_;
-	private Timer timer_;
+	//private Timer timer_;
 	private Logger logger_;
 	public static void main(String[] argv) {
-		chain_test test = new chain_test();
-		test.Initialize();
+		chain_test chaintest = new chain_test();
+		chaintest.Initialize();
 		System.out.println("*****************start chain_message successfully******************");
-		test.OnTimer();	
+		try {
+			Thread.sleep(100000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		chaintest.Stop();
+	}
+	public void Stop() {
+		chain_message_one_.Stop();
+		test_thread.Stop();
 	}
 	//@Test
 	public void Initialize() {
@@ -281,20 +288,42 @@ public class chain_test {
 		return bubikey_new;
 	}
 	
-	public void OnTimer() {
-		timer_ = new Timer();
-		timer_.schedule(new TimerTask() {
-			@SuppressWarnings("unused")
-			@Override
-			public void run() {
-				//String url = "http://192.168.10.215:19333";
-				String url = "http://127.0.0.1:29333";
-				String privateKey = "c00177e3fc95822f5d4c653a35b712421978e2998fa44a3ea3c6e4b7fe98b496f87fee";
-				String publicKey = "b0019798ea08b3286e1dac0c52f98c93388c946ee606878d2a538aaf7623aac5c9f8e1";
-				String address = "a002d8345b89dc34a57574eb497635ff125a3799fe77b6";
-				
-				//TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ECCSM2, null, null, null);
+	class TestThread implements Runnable {
+		boolean enabled_ = true;
+		Thread testThead_;
+		TestThread() {
+			testThead_ = new Thread(this);
+			testThead_.start();
+		}
+
+		@Override
+		public void run() {
+			while(enabled_) {
+				System.out.println("===============================111111");
+				try {
+					Thread.sleep(5000);
+					
+					String url = "http://127.0.0.1:29333";
+					String privateKey = "c00177e3fc95822f5d4c653a35b712421978e2998fa44a3ea3c6e4b7fe98b496f87fee";
+					String publicKey = "b0019798ea08b3286e1dac0c52f98c93388c946ee606878d2a538aaf7623aac5c9f8e1";
+					String address = "a002d8345b89dc34a57574eb497635ff125a3799fe77b6";
+					
+					TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ECCSM2, null, null, null);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
-		}, 1000, 10000);
+		}
+		
+		public void Stop() {
+			enabled_ = false;
+			try {
+				testThead_.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 }

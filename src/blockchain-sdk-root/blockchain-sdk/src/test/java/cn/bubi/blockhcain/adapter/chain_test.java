@@ -15,8 +15,6 @@ package cn.bubi.blockhcain.adapter;
 
 
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -34,8 +32,8 @@ import cn.bubi.blockchain.adapter.Message;
 
 public class chain_test {
 	private ChainMessageEx chain_message_one_;
+	private TestThread test_thread = new TestThread();
 	private Object object_;
-	private Timer timer_;
 	private Logger logger_;
 	private long seq_;
 	private static Map<String, Long> tx_times;
@@ -44,7 +42,16 @@ public class chain_test {
 		chain_test test = new chain_test();
 		test.Initialize();
 		System.out.println("*****************start chain_message successfully******************");
-		test.OnTimer();	
+		try {
+			Thread.sleep(100000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		test.Stop();
+	}
+	public void Stop() {
+		chain_message_one_.Stop();
+		test_thread.Stop();
 	}
 	//@Test
 	public void Initialize() {
@@ -119,12 +126,21 @@ public class chain_test {
 		}
 	}
 	
-	public void OnTimer() {
-		timer_ = new Timer();
-		timer_.schedule(new TimerTask() {
-			@Override
-			public void run() {
+	class TestThread implements Runnable {
+		boolean enabled_ = true;
+		Thread testThead_;
+		TestThread() {
+			testThead_ = new Thread(this);
+			testThead_.start();
+		}
+
+		@Override
+		public void run() {
+			while(enabled_) {
+				System.out.println("===============================111111");
 				try {
+					Thread.sleep(5000);
+					
 					String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
 					String address = "bubiV8i2558GmfnBREe87ZagdkKsfeJh5HYjcNpa";
 					String httpRequest = "http://192.168.10.120:19333";
@@ -165,11 +181,21 @@ public class chain_test {
 					if (!chain_message_one_.Send(Message.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, env.build().toByteArray())) {
 						System.out.println("send transaction failed");
 					}
-				} catch (Exception e1) {
+				} catch (Exception e) {
 					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					e.printStackTrace();
 				}
 			}
-		}, 5000, 100);
+		}
+		
+		public void Stop() {
+			enabled_ = false;
+			try {
+				testThead_.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 }
