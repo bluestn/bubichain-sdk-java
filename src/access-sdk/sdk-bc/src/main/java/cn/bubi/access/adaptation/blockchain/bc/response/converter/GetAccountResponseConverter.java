@@ -1,7 +1,7 @@
 package cn.bubi.access.adaptation.blockchain.bc.response.converter;
 
 import cn.bubi.access.adaptation.blockchain.bc.response.Account;
-import cn.bubi.component.http.util.serialize.SerializeUtils;
+import cn.bubi.baas.utils.http.util.SerializeUtils;
 
 /**
  * 解析rpc返回结果中的result

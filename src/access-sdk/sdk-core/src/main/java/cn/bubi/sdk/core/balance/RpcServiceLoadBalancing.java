@@ -8,8 +8,8 @@ import cn.bubi.access.adaptation.blockchain.bc.response.converter.ServiceRespons
 import cn.bubi.access.adaptation.blockchain.bc.response.ledger.Ledger;
 import cn.bubi.access.adaptation.blockchain.bc.response.operation.SetMetadata;
 import cn.bubi.access.adaptation.blockchain.exception.BlockchainException;
-import cn.bubi.component.http.core.HttpServiceAgent;
-import cn.bubi.component.http.core.connection.ServiceEndpoint;
+import cn.bubi.baas.utils.http.agent.HttpServiceAgent;
+import cn.bubi.baas.utils.http.agent.ServiceEndpoint;
 import cn.bubi.sdk.core.balance.model.RpcServiceConfig;
 import cn.bubi.sdk.core.balance.model.RpcServiceContent;
 import cn.bubi.sdk.core.exception.ExceptionUtil;

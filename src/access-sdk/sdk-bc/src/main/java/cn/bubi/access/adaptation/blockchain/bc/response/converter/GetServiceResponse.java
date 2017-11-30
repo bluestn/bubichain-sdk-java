@@ -1,10 +1,9 @@
 package cn.bubi.access.adaptation.blockchain.bc.response.converter;
 
-
-import cn.bubi.component.http.converters.JsonResponseConverter;
-import cn.bubi.component.http.converters.ResponseConverter;
-import cn.bubi.component.http.core.HttpServiceContext;
-import cn.bubi.component.http.core.ServiceRequest;
+import cn.bubi.baas.utils.http.HttpServiceContext;
+import cn.bubi.baas.utils.http.ResponseConverter;
+import cn.bubi.baas.utils.http.agent.ServiceRequest;
+import cn.bubi.baas.utils.http.converters.JsonResponseConverter;
 
 import java.io.InputStream;
 

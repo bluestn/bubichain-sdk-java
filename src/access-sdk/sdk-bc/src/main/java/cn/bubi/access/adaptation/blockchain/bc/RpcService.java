@@ -6,11 +6,7 @@ import cn.bubi.access.adaptation.blockchain.bc.response.TransactionHistory;
 import cn.bubi.access.adaptation.blockchain.bc.response.converter.*;
 import cn.bubi.access.adaptation.blockchain.bc.response.ledger.Ledger;
 import cn.bubi.access.adaptation.blockchain.bc.response.operation.SetMetadata;
-import cn.bubi.component.http.annotation.HttpAction;
-import cn.bubi.component.http.annotation.HttpService;
-import cn.bubi.component.http.annotation.RequestBody;
-import cn.bubi.component.http.annotation.RequestParam;
-import cn.bubi.component.http.core.HttpMethod;
+import cn.bubi.baas.utils.http.*;
 
 @HttpService
 public interface RpcService{

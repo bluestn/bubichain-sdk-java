@@ -1,8 +1,8 @@
 package cn.bubi.sdk.core.balance;
 
 import cn.bubi.access.adaptation.blockchain.bc.RpcService;
-import cn.bubi.component.http.core.HttpServiceAgent;
-import cn.bubi.component.http.core.connection.ServiceEndpoint;
+import cn.bubi.baas.utils.http.agent.HttpServiceAgent;
+import cn.bubi.baas.utils.http.agent.ServiceEndpoint;
 import cn.bubi.sdk.core.balance.model.RpcServiceConfig;
 import cn.bubi.sdk.core.exception.SdkError;
 import cn.bubi.sdk.core.exception.SdkException;

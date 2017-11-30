@@ -9,13 +9,14 @@
         <artifactId>access-sdk</artifactId>
         <version>1.1.0.RELEASE</version>
     </parent>
-    
+
     <artifactId>sdk-utils</artifactId>
     <packaging>pom</packaging>
 
     <modules>
         <module>utils-common</module>
         <module>utils-encryption</module>
+        <module>utils-http</module>
     </modules>
 
     <properties>
