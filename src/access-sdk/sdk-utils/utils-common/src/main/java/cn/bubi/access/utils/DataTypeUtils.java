@@ -1,6 +1,6 @@
 package cn.bubi.access.utils;
 
-import org.springframework.util.TypeUtils;
+import cn.bubi.access.utils.spring.TypeUtils;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;

@@ -1,6 +1,6 @@
 package cn.bubi.access.utils;
 
-import org.springframework.util.StringUtils;
+import cn.bubi.access.utils.spring.StringUtils;
 
 public abstract class PathUtils{
 

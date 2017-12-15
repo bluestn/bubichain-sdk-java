@@ -1,8 +1,8 @@
 package cn.bubi.baas.utils.http.agent;
 
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.baas.utils.http.PropertiesConverter;
 import cn.bubi.baas.utils.http.RequestParamMap;
-import org.springframework.util.StringUtils;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +39,7 @@ class RequestParamMapDefinition{
 
 
     public static List<ArgDefEntry<RequestParamMapDefinition>> resolveParamMapDefinitions(List<ArgDefEntry<RequestParamMap>> reqParamAnnos){
-        List<ArgDefEntry<RequestParamMapDefinition>> reqDefs = new LinkedList<ArgDefEntry<RequestParamMapDefinition>>();
+        List<ArgDefEntry<RequestParamMapDefinition>> reqDefs = new LinkedList<>();
         for (ArgDefEntry<RequestParamMap> entry : reqParamAnnos) {
             RequestParamMap reqParamAnno = entry.getDefinition();
             String prefix = StringUtils.trimWhitespace(reqParamAnno.prefix());
@@ -48,7 +48,7 @@ class RequestParamMapDefinition{
             Class<?> converterClazz = reqParamAnno.converter();
             PropertiesConverter converter = PropertiesConverterFactory.instantiatePropertiesConverter(converterClazz, entry.getArgType());
             RequestParamMapDefinition reqDef = new RequestParamMapDefinition(prefix, seperator, reqParamAnno.required(), converter);
-            reqDefs.add(new ArgDefEntry<RequestParamMapDefinition>(entry.getIndex(), entry.getArgType(), reqDef));
+            reqDefs.add(new ArgDefEntry<>(entry.getIndex(), entry.getArgType(), reqDef));
         }
         return reqDefs;
     }

@@ -1,8 +1,8 @@
 package cn.bubi.sdk.core.utils;
 
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.sdk.core.exception.SdkError;
 import cn.bubi.sdk.core.exception.SdkException;
-import org.springframework.util.StringUtils;
 
 import java.util.Collection;
 import java.util.List;

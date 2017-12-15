@@ -1,8 +1,8 @@
 package cn.bubi.access.utils.console;
 
+import cn.bubi.access.utils.spring.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.util.Arrays;

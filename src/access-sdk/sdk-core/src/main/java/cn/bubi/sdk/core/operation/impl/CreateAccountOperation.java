@@ -7,6 +7,7 @@ import cn.bubi.access.adaptation.blockchain.bc.response.Threshold;
 import cn.bubi.access.adaptation.blockchain.bc.response.TypeThreshold;
 import cn.bubi.access.adaptation.blockchain.bc.response.operation.CreateAccount;
 import cn.bubi.access.adaptation.blockchain.bc.response.operation.SetMetadata;
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.blockchain.adapter3.Chain;
 import cn.bubi.blockchain.adapter3.Common;
 import cn.bubi.sdk.core.exception.SdkError;
@@ -14,7 +15,6 @@ import cn.bubi.sdk.core.exception.SdkException;
 import cn.bubi.sdk.core.operation.AbstractBcOperation;
 import cn.bubi.sdk.core.operation.builder.BaseBuilder;
 import cn.bubi.sdk.core.utils.Assert;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 

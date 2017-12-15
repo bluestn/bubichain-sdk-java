@@ -3,11 +3,12 @@ package cn.bubi.baas.utils.http.agent;
 import cn.bubi.access.utils.EmptyProperties;
 import cn.bubi.baas.utils.http.PropertiesConverter;
 import cn.bubi.baas.utils.http.RequestParam;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.core.convert.TypeDescriptor;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -27,24 +28,32 @@ public class PojoPropertiesConverter implements PropertiesConverter{
 
     public PojoPropertiesConverter(Class<?> argType){
         this.argType = argType;
-        resolveParamProperties();
+        try {
+            resolveParamProperties();
+        } catch (IntrospectionException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void resolveParamProperties(){
-        BeanWrapperImpl beanWrapper = new BeanWrapperImpl(argType);
+    private void resolveParamProperties() throws IntrospectionException{
         List<ArgDefEntry<RequestParamDefinition>> reqParamDefs = new LinkedList<>();
-        PropertyDescriptor[] propDescs = beanWrapper.getPropertyDescriptors();
-        TypeDescriptor propTypeDesc;
-        for (PropertyDescriptor propDesc : propDescs) {
-            propTypeDesc = beanWrapper.getPropertyTypeDescriptor(propDesc.getName());
 
-            RequestParam reqParamAnno = propTypeDesc.getAnnotation(RequestParam.class);
+        BeanInfo beanInfo = Introspector.getBeanInfo(argType);
+        PropertyDescriptor[] propDescs = beanInfo.getPropertyDescriptors();
+
+        for (PropertyDescriptor propDesc : propDescs) {
+            //            TypeDescriptor propTypeDesc;
+            //            propTypeDesc = beanWrapper.getPropertyTypeDescriptor(propDesc.getName());
+
+
+            //            RequestParam reqParamAnno = propTypeDesc.getAnnotation(RequestParam.class);
+            RequestParam reqParamAnno = propDesc.getPropertyType().getAnnotation(RequestParam.class);
             if (reqParamAnno == null) {
                 // 忽略未标注 RequestParam 的属性；
                 continue;
             }
             RequestParamDefinition reqParamDef = RequestParamDefinition.resolveDefinition(reqParamAnno);
-            ArgDefEntry<RequestParamDefinition> defEntry = new ArgDefEntry<>(reqParamDefs.size(), propTypeDesc.getType(),
+            ArgDefEntry<RequestParamDefinition> defEntry = new ArgDefEntry<>(reqParamDefs.size(), propDesc.getPropertyType(),
                     reqParamDef);
             reqParamDefs.add(defEntry);
             propNames.add(propDesc.getName());
@@ -57,12 +66,17 @@ public class PojoPropertiesConverter implements PropertiesConverter{
         if (propNames.size() == 0) {
             return EmptyProperties.INSTANCE;
         }
-        BeanWrapper beanWrapper = new BeanWrapperImpl(arg);
         Object[] propValues = new Object[propNames.size()];
         int i = 0;
-        for (String propName : propNames) {
-            propValues[i] = beanWrapper.getPropertyValue(propName);
-            i++;
+        try {
+            for (String propName : propNames) {
+                Field field = arg.getClass().getField(propName);
+                field.setAccessible(true);
+                propValues[i] = field.get(arg);
+                i++;
+            }
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
         }
         Properties params = paramResolver.resolve(propValues);
         return params;

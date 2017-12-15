@@ -4,7 +4,7 @@ import cn.bubi.access.adaptation.blockchain.bc.RpcService;
 import cn.bubi.access.adaptation.blockchain.bc.response.Account;
 import cn.bubi.access.adaptation.blockchain.bc.response.TransactionHistory;
 import cn.bubi.access.adaptation.blockchain.bc.response.operation.SetMetadata;
-import org.springframework.util.StringUtils;
+import cn.bubi.access.utils.spring.StringUtils;
 
 /**
  * @author xiezhengchao@bubi.cn

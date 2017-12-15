@@ -1,7 +1,7 @@
 package cn.bubi.access.utils.io;
 
 import cn.bubi.access.utils.codec.HexUtils;
-import org.springframework.util.Base64Utils;
+import cn.bubi.access.utils.spring.Base64Utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

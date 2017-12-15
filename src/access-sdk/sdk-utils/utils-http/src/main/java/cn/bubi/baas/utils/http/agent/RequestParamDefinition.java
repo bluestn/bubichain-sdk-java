@@ -1,8 +1,8 @@
 package cn.bubi.baas.utils.http.agent;
 
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.baas.utils.http.RequestParam;
 import cn.bubi.baas.utils.http.StringConverter;
-import org.springframework.util.StringUtils;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -42,11 +42,11 @@ class RequestParamDefinition{
 
 
     public static List<ArgDefEntry<RequestParamDefinition>> resolveSingleParamDefinitions(List<ArgDefEntry<RequestParam>> reqParamAnnos){
-        List<ArgDefEntry<RequestParamDefinition>> reqDefs = new LinkedList<ArgDefEntry<RequestParamDefinition>>();
+        List<ArgDefEntry<RequestParamDefinition>> reqDefs = new LinkedList<>();
         for (ArgDefEntry<RequestParam> entry : reqParamAnnos) {
             RequestParam reqParamAnno = entry.getDefinition();
             RequestParamDefinition reqDef = resolveDefinition(reqParamAnno);
-            reqDefs.add(new ArgDefEntry<RequestParamDefinition>(entry.getIndex(), entry.getArgType(), reqDef));
+            reqDefs.add(new ArgDefEntry<>(entry.getIndex(), entry.getArgType(), reqDef));
         }
         return reqDefs;
     }

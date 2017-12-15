@@ -1,8 +1,8 @@
 package cn.bubi.baas.utils.http.agent;
 
+import cn.bubi.access.utils.spring.BeanUtils;
 import cn.bubi.baas.utils.http.StringConverter;
 import cn.bubi.baas.utils.http.converters.ObjectToStringConverter;
-import org.springframework.beans.BeanUtils;
 
 abstract class StringConverterFactory{
 

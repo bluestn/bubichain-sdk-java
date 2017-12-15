@@ -2,8 +2,8 @@ package cn.bubi.baas.utils.http.agent;
 
 import cn.bubi.access.utils.EmptyProperties;
 import cn.bubi.access.utils.PropertiesUtils;
+import cn.bubi.access.utils.spring.CollectionUtils;
 import cn.bubi.baas.utils.http.HttpServiceException;
-import org.springframework.util.CollectionUtils;
 
 import java.util.LinkedList;
 import java.util.List;

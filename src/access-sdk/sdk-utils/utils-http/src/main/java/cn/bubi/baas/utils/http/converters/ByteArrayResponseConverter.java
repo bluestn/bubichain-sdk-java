@@ -1,9 +1,9 @@
 package cn.bubi.baas.utils.http.converters;
 
+import cn.bubi.access.utils.spring.StreamUtils;
 import cn.bubi.baas.utils.http.HttpServiceContext;
 import cn.bubi.baas.utils.http.ResponseConverter;
 import cn.bubi.baas.utils.http.agent.ServiceRequest;
-import org.springframework.util.StreamUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

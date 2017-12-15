@@ -1,8 +1,8 @@
 package cn.bubi.access.utils.blockchain;
 
+import cn.bubi.access.utils.spring.Base64Utils;
 import cn.bubi.encryption.BubiKey;
 import cn.bubi.encryption.BubiKeyType;
-import org.springframework.util.Base64Utils;
 
 /**
  * v3 {布比私钥，布比公钥，布比地址}

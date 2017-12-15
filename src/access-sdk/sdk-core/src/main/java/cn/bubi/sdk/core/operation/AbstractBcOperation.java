@@ -1,11 +1,11 @@
 package cn.bubi.sdk.core.operation;
 
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.blockchain.adapter3.Chain;
 import cn.bubi.sdk.core.exception.SdkException;
 import cn.bubi.sdk.core.utils.SwallowUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.protobuf.ByteString;
-import org.springframework.util.StringUtils;
 
 /**
  * @author xiezhengchao@bubi.cn

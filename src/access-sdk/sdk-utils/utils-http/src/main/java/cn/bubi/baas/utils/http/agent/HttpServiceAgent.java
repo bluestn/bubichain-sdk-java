@@ -3,6 +3,10 @@ package cn.bubi.baas.utils.http.agent;
 import cn.bubi.access.utils.EmptyProperties;
 import cn.bubi.access.utils.io.BytesUtils;
 import cn.bubi.access.utils.io.EmptyInputStream;
+import cn.bubi.access.utils.spring.BeanUtils;
+import cn.bubi.access.utils.spring.ClassUtils;
+import cn.bubi.access.utils.spring.ReflectionUtils;
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.baas.utils.http.*;
 import cn.bubi.baas.utils.http.converters.NullResponseConverter;
 import cn.bubi.baas.utils.http.converters.StringResponseConverter;
@@ -14,10 +18,6 @@ import org.apache.http.client.methods.*;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.springframework.beans.BeanUtils;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,9 +67,8 @@ public class HttpServiceAgent{
     /**
      * 创建映射指定服务接口的 HTTP 服务代理；
      *
-     * @param serviceClass        服务的接口类型；
-     * @param serviceEndpoint     连接到服务提供者服务器的相关设置；
-     * @param authorizationHeader 安全认证头部；
+     * @param serviceClass    服务的接口类型；
+     * @param serviceEndpoint 连接到服务提供者服务器的相关设置；
      * @return
      */
     public static <T> T createService(Class<T> serviceClass, ServiceEndpoint serviceEndpoint,
@@ -127,8 +126,6 @@ public class HttpServiceAgent{
      * 创建映射指定服务接口的 HTTP 服务代理；
      *
      * @param serviceClass                定义了服务的接口类型；
-     * @param serviceEndpoint             服务终结点；
-     * @param connectionManager           连接管理器；
      * @param authorizationHeaderResolver 安全认证头部的解析器；
      * @param headers                     请求头部；
      * @return
@@ -142,8 +139,6 @@ public class HttpServiceAgent{
      * 创建映射指定服务接口的 HTTP 服务代理；
      *
      * @param serviceClass                定义了服务的接口类型；
-     * @param serviceEndpoint             服务终结点；
-     * @param connectionManager           连接管理器；
      * @param authorizationHeaderResolver 安全认证头部的解析器；
      * @param headers                     请求头部；
      * @param bindingData                 由调用者指定的绑定对象；<br>
@@ -323,7 +318,6 @@ public class HttpServiceAgent{
      * 创建回复结果转换器；
      *
      * @param actionDef
-     * @param retnClazz
      * @return
      */
     private ResponseConverter createResponseConverter(HttpAction actionDef, Method mth){
@@ -408,8 +402,6 @@ public class HttpServiceAgent{
     }
 
     /**
-     * @param paramIndex
-     * @param parameter
      * @param reqBodyAnnoEntry
      * @return
      */
@@ -586,8 +578,6 @@ public class HttpServiceAgent{
     /**
      * 创建请求；
      *
-     * @param actionContext
-     * @param args
      * @return
      */
     private HttpUriRequest buildRequest(ServiceRequest request){

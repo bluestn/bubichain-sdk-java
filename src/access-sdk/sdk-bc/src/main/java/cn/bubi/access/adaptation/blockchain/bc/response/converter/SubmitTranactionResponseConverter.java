@@ -2,6 +2,7 @@ package cn.bubi.access.adaptation.blockchain.bc.response.converter;
 
 import cn.bubi.access.adaptation.blockchain.exception.BlockchainError;
 import cn.bubi.access.adaptation.blockchain.exception.BlockchainException;
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.baas.utils.http.HttpServiceContext;
 import cn.bubi.baas.utils.http.ResponseConverter;
 import cn.bubi.baas.utils.http.agent.ServiceRequest;
@@ -10,7 +11,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.StringUtils;
 
 import java.io.InputStream;
 

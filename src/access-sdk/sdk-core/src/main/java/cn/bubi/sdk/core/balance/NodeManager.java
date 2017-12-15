@@ -1,6 +1,7 @@
 package cn.bubi.sdk.core.balance;
 
 import cn.bubi.access.adaptation.blockchain.bc.RpcService;
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.baas.utils.http.agent.HttpServiceAgent;
 import cn.bubi.baas.utils.http.agent.ServiceEndpoint;
 import cn.bubi.sdk.core.balance.model.RpcServiceConfig;
@@ -8,7 +9,6 @@ import cn.bubi.sdk.core.exception.SdkError;
 import cn.bubi.sdk.core.exception.SdkException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 

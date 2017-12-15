@@ -124,7 +124,7 @@ public class TxFailManager{
 
         private FailProcess(RpcService rpcService, Set<TransactionExecutedEventMessage> executedEventMessages){
             this.rpcService = rpcService;
-            this.executedEventMessages = executedEventMessages;
+            this.executedEventMessages = executedEventMessages == null ? new HashSet<>() : executedEventMessages;
         }
 
         @Override

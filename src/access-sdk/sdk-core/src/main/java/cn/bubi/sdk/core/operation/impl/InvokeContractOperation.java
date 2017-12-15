@@ -1,13 +1,13 @@
 package cn.bubi.sdk.core.operation.impl;
 
 import cn.bubi.access.adaptation.blockchain.bc.OperationTypeV3;
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.blockchain.adapter3.Chain;
 import cn.bubi.sdk.core.exception.SdkError;
 import cn.bubi.sdk.core.exception.SdkException;
 import cn.bubi.sdk.core.operation.AbstractBcOperation;
 import cn.bubi.sdk.core.operation.builder.BaseBuilder;
 import cn.bubi.sdk.core.utils.Assert;
-import org.springframework.util.StringUtils;
 
 /**
  * @author xiezhengchao@bubi.cn

@@ -1,8 +1,8 @@
 package cn.bubi.access.utils.event;
 
 import cn.bubi.access.utils.Disposable;
+import cn.bubi.access.utils.spring.ReflectionUtils;
 import org.slf4j.Logger;
-import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

@@ -1,8 +1,8 @@
 package cn.bubi.baas.utils.http.agent;
 
+import cn.bubi.access.utils.spring.BeanUtils;
 import cn.bubi.baas.utils.http.PropertiesConverter;
 import cn.bubi.baas.utils.http.StringConverter;
-import org.springframework.beans.BeanUtils;
 
 public class PropertiesConverterFactory{
 

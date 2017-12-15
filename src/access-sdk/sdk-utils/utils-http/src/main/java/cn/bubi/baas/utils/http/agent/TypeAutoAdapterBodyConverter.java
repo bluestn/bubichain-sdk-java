@@ -1,12 +1,12 @@
 package cn.bubi.baas.utils.http.agent;
 
 import cn.bubi.access.utils.io.EmptyInputStream;
+import cn.bubi.access.utils.spring.ClassUtils;
 import cn.bubi.baas.utils.http.RequestBodyConverter;
 import cn.bubi.baas.utils.http.converters.ByteArrayBodyConverter;
 import cn.bubi.baas.utils.http.converters.InputStreamBodyConverter;
 import cn.bubi.baas.utils.http.converters.JsonBodyConverter;
 import cn.bubi.baas.utils.http.converters.ObjectToStringBodyConverter;
-import org.springframework.util.ClassUtils;
 
 import java.io.InputStream;
 import java.io.OutputStream;
