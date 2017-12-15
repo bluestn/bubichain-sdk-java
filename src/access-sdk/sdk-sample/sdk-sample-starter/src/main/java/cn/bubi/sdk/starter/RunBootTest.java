@@ -14,6 +14,7 @@ import cn.bubi.sdk.core.utils.GsonUtil;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * @author xiezhengchao@bubi.cn
@@ -35,8 +36,11 @@ public class RunBootTest implements CommandLineRunner{
     }
 
     private static String address = "a0012ea403227b861289ed5fcedd30e51e85ef7397ebc6";
-    private static String publicKey = "b001e9fd31a0fc25af3123f67575cdd0c6b8c2192eead9f58728a3fb46accdc0faa67f";
-    private static String privateKey = "c0018335e8c3e34cceaa24027207792318bc388bea443b53d5ba9e00e5adb6739bb61b";
+
+    @RequestMapping("create")
+    public void create(){
+        createAccountOperation();
+    }
 
     @Override
     public void run(String... args) throws Exception{
@@ -55,7 +59,7 @@ public class RunBootTest implements CommandLineRunner{
      */
     private void createAccountOperation(){
         try {
-            Transaction transaction = operationService.newTransaction(address);
+            Transaction transaction = operationService.newTransactionByAccountPool();
 
             BlockchainKeyPair user = SecureKeyGenerator.generateBubiKeyPair();
             System.out.println(GsonUtil.toJson(user));
@@ -75,7 +79,6 @@ public class RunBootTest implements CommandLineRunner{
 
             TransactionCommittedResult result = transaction.buildAddOperation(createAccountOperation)
                     .buildTxMetadata("交易metadata")
-                    .buildAddSigner(publicKey, privateKey)
                     .commit();
 
             System.out.println("\n------------------------------------------------");

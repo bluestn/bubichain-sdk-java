@@ -35,7 +35,7 @@ public class FailTest extends TestConfig{
     /**
      * 4 对象不存在，如查询不到账号、TX、区块等
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#TARGET_NOT_EXIST
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.TARGET_NOT_EXIST
      */
     @Test(expected = SdkException.class)
     public void targetNotExistTest() throws SdkException{
@@ -56,7 +56,7 @@ public class FailTest extends TestConfig{
     /**
      * 92 资产issue 地址非法
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#ILLEGAL_ASSET
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.ILLEGAL_ASSET
      */
     @Test(expected = SdkException.class)
     public void illegalAssetAddressTest() throws SdkException{
@@ -80,7 +80,7 @@ public class FailTest extends TestConfig{
     /**
      * 93 签名权重不够，达不到操作的门限值
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#WRONG_SIGNATURE
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.WRONG_SIGNATURE
      */
     @Test(expected = SdkException.class)
     public void wrongSignatureTest() throws SdkException{
@@ -111,13 +111,13 @@ public class FailTest extends TestConfig{
     /**
      * 94 地址非法
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#ILLEGAL_ADDRESS
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.ILLEGAL_ADDRESS
      */
     @Test(expected = SdkException.class)
     public void illegalDescAddressTest() throws SdkException{
 
         try {
-            Transaction transaction = getOperationService().newTransaction(CREATOR_ADDRESS);
+            Transaction transaction = getOperationService().newTransaction(address);
 
             CreateAccountOperation createAccountOperation = new CreateAccountOperation.Builder()
                     .buildDestAddress("illegal desc address")
@@ -126,7 +126,7 @@ public class FailTest extends TestConfig{
 
             transaction.buildAddOperation(createAccountOperation)
                     .buildTxMetadata("交易metadata")
-                    .buildAddSigner(CREATOR_PUBLIC_KEY, CREATOR_PRIVATE_KEY)
+                    .buildAddSigner(publicKey, privateKey)
                     .commit();
         } catch (SdkException e) {
             processSdkException(e, "94 地址非法:", BlockchainError.ILLEGAL_ADDRESS);
@@ -136,7 +136,7 @@ public class FailTest extends TestConfig{
     /**
      * 99 交易序号错误，nonce错误
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#TX_WRONG_SEQUENCE_NO
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.TX_WRONG_SEQUENCE_NO
      */
     @Test(expected = SdkException.class)
     @Ignore("通过手工修改nonce确认通过测试")
@@ -152,20 +152,20 @@ public class FailTest extends TestConfig{
     /**
      * 102 创建账号操作，目标账号已存在
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#TARGET_ACCOUNT_EXIST
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.TARGET_ACCOUNT_EXIST
      */
     @Test(expected = SdkException.class)
     public void descAddressExistTest() throws SdkException{
         try {
             BlockchainKeyPair user = createAccountOperation();
-            Transaction transaction = getOperationService().newTransaction(CREATOR_ADDRESS);
+            Transaction transaction = getOperationService().newTransaction(address);
 
             CreateAccountOperation createAccountOperation = new CreateAccountOperation.Builder()
                     .buildDestAddress(user.getBubiAddress())
                     .build();
 
             transaction.buildAddOperation(createAccountOperation)
-                    .buildAddSigner(CREATOR_PUBLIC_KEY, CREATOR_PRIVATE_KEY)
+                    .buildAddSigner(publicKey, privateKey)
                     .commit();
         } catch (SdkException e) {
             processSdkException(e, "102 创建账号操作，目标账号已存在:", BlockchainError.TARGET_ACCOUNT_EXIST);
@@ -176,7 +176,7 @@ public class FailTest extends TestConfig{
     /**
      * 103 账户不存在
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#TARGET_ACCOUNT_NOT_EXIST
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.TARGET_ACCOUNT_NOT_EXIST
      */
     @Test(expected = SdkException.class)
     public void descAddressNotExistTest() throws SdkException{
@@ -208,7 +208,7 @@ public class FailTest extends TestConfig{
     /**
      * 104 支付操作，资产余额不足
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#ASSET_NO_AMOUNT
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.ASSET_NO_AMOUNT
      */
     @Test(expected = SdkException.class)
     public void balanceNotEnoughTest() throws SdkException{
@@ -239,7 +239,7 @@ public class FailTest extends TestConfig{
     /**
      * 144 metadata的version版本号不与已有的匹配
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#ILLEGAL_VERSION
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.ILLEGAL_VERSION
      */
     @Test(expected = SdkException.class)
     public void illegalMetadataVersionTest() throws SdkException{
@@ -264,12 +264,12 @@ public class FailTest extends TestConfig{
     /**
      * 152 合约语法分析失败
      *
-     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError#CONTRACT_SYNTAX_ERROR
+     * @see cn.bubi.access.adaptation.blockchain.exception.BlockchainError.CONTRACT_SYNTAX_ERROR
      */
     @Test(expected = SdkException.class)
     public void contractInvokeFailTest() throws SdkException{
         try {
-            Transaction transaction = getOperationService().newTransaction(CREATOR_ADDRESS);
+            Transaction transaction = getOperationService().newTransaction(address);
 
             BlockchainKeyPair keyPair = SecureKeyGenerator.generateBubiKeyPair();
             LOGGER.info(GsonUtil.toJson(keyPair));
@@ -280,7 +280,7 @@ public class FailTest extends TestConfig{
                     .build();
 
             transaction.buildAddOperation(createAccountOperation)
-                    .buildAddSigner(CREATOR_PUBLIC_KEY, CREATOR_PRIVATE_KEY)
+                    .buildAddSigner(publicKey, privateKey)
                     .commit();
         } catch (SdkException e) {
             processSdkException(e, "152 合约语法分析失败:", BlockchainError.CONTRACT_SYNTAX_ERROR);

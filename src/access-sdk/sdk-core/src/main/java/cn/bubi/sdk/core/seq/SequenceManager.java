@@ -8,8 +8,14 @@ import cn.bubi.sdk.core.exception.SdkException;
  */
 public interface SequenceManager{
 
+    /**
+     * 初始化
+     */
     void init();
 
+    /**
+     * 销毁
+     */
     void destroy();
 
     /**
@@ -18,7 +24,7 @@ public interface SequenceManager{
     long getSequenceNumber(String address) throws SdkException;
 
     /**
-     * 清理，主要提交失败时调用
+     * 重置，提交失败时调用
      */
     void reset(String address);
 

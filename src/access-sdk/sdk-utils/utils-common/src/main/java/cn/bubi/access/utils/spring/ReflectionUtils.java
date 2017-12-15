@@ -17,8 +17,6 @@
 package cn.bubi.access.utils.spring;
 
 
-import com.sun.istack.internal.Nullable;
-
 import java.lang.reflect.*;
 import java.sql.SQLException;
 import java.util.*;
@@ -86,8 +84,8 @@ public abstract class ReflectionUtils{
      * @param type  the type of the field (may be {@code null} if name is specified)
      * @return the corresponding Field object, or {@code null} if not found
      */
-    @Nullable
-    public static Field findField(Class<?> clazz, @Nullable String name, @Nullable Class<?> type){
+
+    public static Field findField(Class<?> clazz, String name, Class<?> type){
         Assert.notNull(clazz, "Class must not be null");
         Assert.isTrue(name != null || type != null, "Either name or type of the field must be specified");
         Class<?> searchType = clazz;
@@ -115,7 +113,7 @@ public abstract class ReflectionUtils{
      * @param target the target object on which to set the field
      * @param value  the value to set (may be {@code null})
      */
-    public static void setField(Field field, @Nullable Object target, @Nullable Object value){
+    public static void setField(Field field, Object target, Object value){
         try {
             field.set(target, value);
         } catch (IllegalAccessException ex) {
@@ -136,8 +134,8 @@ public abstract class ReflectionUtils{
      * @param target the target object from which to get the field
      * @return the field's current value
      */
-    @Nullable
-    public static Object getField(Field field, @Nullable Object target){
+
+    public static Object getField(Field field, Object target){
         try {
             return field.get(target);
         } catch (IllegalAccessException ex) {
@@ -156,7 +154,7 @@ public abstract class ReflectionUtils{
      * @param name  the name of the method
      * @return the Method object, or {@code null} if none found
      */
-    @Nullable
+
     public static Method findMethod(Class<?> clazz, String name){
         return findMethod(clazz, name, new Class<?>[0]);
     }
@@ -172,8 +170,8 @@ public abstract class ReflectionUtils{
      *                   (may be {@code null} to indicate any signature)
      * @return the Method object, or {@code null} if none found
      */
-    @Nullable
-    public static Method findMethod(Class<?> clazz, String name, @Nullable Class<?>... paramTypes){
+
+    public static Method findMethod(Class<?> clazz, String name, Class<?>... paramTypes){
         Assert.notNull(clazz, "Class must not be null");
         Assert.notNull(name, "Method name must not be null");
         Class<?> searchType = clazz;
@@ -200,8 +198,8 @@ public abstract class ReflectionUtils{
      * @return the invocation result, if any
      * @see #invokeMethod(Method, Object, Object[])
      */
-    @Nullable
-    public static Object invokeMethod(Method method, @Nullable Object target){
+
+    public static Object invokeMethod(Method method, Object target){
         return invokeMethod(method, target, new Object[0]);
     }
 
@@ -216,8 +214,8 @@ public abstract class ReflectionUtils{
      * @param args   the invocation arguments (may be {@code null})
      * @return the invocation result, if any
      */
-    @Nullable
-    public static Object invokeMethod(Method method, @Nullable Object target, @Nullable Object... args){
+
+    public static Object invokeMethod(Method method, Object target, Object... args){
         try {
             return method.invoke(target, args);
         } catch (Exception ex) {
@@ -236,8 +234,8 @@ public abstract class ReflectionUtils{
      * @throws SQLException the JDBC API SQLException to rethrow (if any)
      * @see #invokeJdbcMethod(Method, Object, Object[])
      */
-    @Nullable
-    public static Object invokeJdbcMethod(Method method, @Nullable Object target) throws SQLException{
+
+    public static Object invokeJdbcMethod(Method method, Object target) throws SQLException{
         return invokeJdbcMethod(method, target, new Object[0]);
     }
 
@@ -252,8 +250,8 @@ public abstract class ReflectionUtils{
      * @throws SQLException the JDBC API SQLException to rethrow (if any)
      * @see #invokeMethod(Method, Object, Object[])
      */
-    @Nullable
-    public static Object invokeJdbcMethod(Method method, @Nullable Object target, @Nullable Object... args)
+
+    public static Object invokeJdbcMethod(Method method, Object target, Object... args)
             throws SQLException{
         try {
             return method.invoke(target, args);
@@ -386,7 +384,7 @@ public abstract class ReflectionUtils{
      *
      * @see Object#equals(Object)
      */
-    public static boolean isEqualsMethod(@Nullable Method method){
+    public static boolean isEqualsMethod(Method method){
         if (method == null || !method.getName().equals("equals")) {
             return false;
         }
@@ -399,7 +397,7 @@ public abstract class ReflectionUtils{
      *
      * @see Object#hashCode()
      */
-    public static boolean isHashCodeMethod(@Nullable Method method){
+    public static boolean isHashCodeMethod(Method method){
         return (method != null && method.getName().equals("hashCode") && method.getParameterCount() == 0);
     }
 
@@ -408,14 +406,14 @@ public abstract class ReflectionUtils{
      *
      * @see Object#toString()
      */
-    public static boolean isToStringMethod(@Nullable Method method){
+    public static boolean isToStringMethod(Method method){
         return (method != null && method.getName().equals("toString") && method.getParameterCount() == 0);
     }
 
     /**
      * Determine whether the given method is originally declared by {@link Object}.
      */
-    public static boolean isObjectMethod(@Nullable Method method){
+    public static boolean isObjectMethod(Method method){
         if (method == null) {
             return false;
         }
@@ -563,7 +561,7 @@ public abstract class ReflectionUtils{
      * @param mf    the filter that determines the methods to apply the callback to
      * @throws IllegalStateException if introspection fails
      */
-    public static void doWithMethods(Class<?> clazz, MethodCallback mc, @Nullable MethodFilter mf){
+    public static void doWithMethods(Class<?> clazz, MethodCallback mc, MethodFilter mf){
         // Keep backing up the inheritance hierarchy.
         Method[] methods = getDeclaredMethods(clazz);
         for (Method method : methods) {
@@ -672,7 +670,7 @@ public abstract class ReflectionUtils{
         return result;
     }
 
-    @Nullable
+
     private static List<Method> findConcreteMethodsOnInterfaces(Class<?> clazz){
         List<Method> result = null;
         for (Class<?> ifc : clazz.getInterfaces()) {
@@ -729,7 +727,7 @@ public abstract class ReflectionUtils{
      * @param ff    the filter that determines the fields to apply the callback to
      * @throws IllegalStateException if introspection fails
      */
-    public static void doWithFields(Class<?> clazz, FieldCallback fc, @Nullable FieldFilter ff){
+    public static void doWithFields(Class<?> clazz, FieldCallback fc, FieldFilter ff){
         // Keep backing up the inheritance hierarchy.
         Class<?> targetClass = clazz;
         do {

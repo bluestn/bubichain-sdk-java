@@ -47,6 +47,8 @@ public enum SdkError{
     EVENT_ERROR_NOT_FOUND_HANDLE(90006, "没有发现注册的事件处理器"),
     SIGNATURE_ERROR_PUBLIC_PRIVATE(90007, "签名异常!请确认公钥或私钥正确性"),
     EVENT_ERROR_ROUTER_HOST_FAIL(90008, "路由节点失败!请确认监听配置和访问配置能够对应"),
+    TRANSACTION_SYNC_TIMEOUT(90009, "超时异常:超出24小时未通知，交易同步器自动移除"),
+    REDIS_ERROR_LOCK_TIMEOUT(90010, "获取redis锁超时！"),
 
     ERROR(99999, "内部错误"),;
 

@@ -7,7 +7,7 @@
     <parent>
         <groupId>cn.bubi.access.sdk</groupId>
         <artifactId>sdk-sample</artifactId>
-        <version>1.1.0.RELEASE</version>
+        <version>2.0.0.RELEASE</version>
     </parent>
 
     <artifactId>sdk-sample-simple</artifactId>

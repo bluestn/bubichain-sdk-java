@@ -2,6 +2,7 @@ package cn.bubi.access.adaptation.blockchain.bc;
 
 import cn.bubi.access.adaptation.blockchain.bc.request.SubTransactionRequest;
 import cn.bubi.access.adaptation.blockchain.bc.response.Account;
+import cn.bubi.access.adaptation.blockchain.bc.response.Hello;
 import cn.bubi.access.adaptation.blockchain.bc.response.TransactionHistory;
 import cn.bubi.access.adaptation.blockchain.bc.response.converter.*;
 import cn.bubi.access.adaptation.blockchain.bc.response.ledger.Ledger;
@@ -16,6 +17,12 @@ public interface RpcService{
      */
     @HttpAction(path = "/getAccount", method = HttpMethod.GET, responseConverter = GetAccountResponseConverter.class)
     Account getAccount(@RequestParam(name = "address") String address);
+
+    /**
+     * 获取底层基本信息
+     */
+    @HttpAction(path = "/hello", method = HttpMethod.GET, responseConverter = HelloResponseConverter.class)
+    Hello hello();
 
     /**
      * 获取账号信息

@@ -29,9 +29,41 @@ public class OperationTest extends TestConfig{
     @Test
     public void query(){
 
-        Account account = getQueryService().getAccount(CREATOR_ADDRESS);
+        Account account = getQueryService().getAccount(address);
 
         LOGGER.info(GsonUtil.toJson(account));
+
+    }
+
+    @Test
+    //    @Ignore("redis test")
+    public void redisTest1() throws InterruptedException{
+        redisTest();
+    }
+
+    @Test
+    //    @Ignore("redis test")
+    public void redisTest2() throws InterruptedException{
+        redisTest();
+    }
+
+    private void redisTest() throws InterruptedException{
+        Thread thread1 = new Thread(() -> {
+            for (int i = 0; i < 10000; i++) {
+                createAccount();
+            }
+        });
+        Thread thread2 = new Thread(() -> {
+            for (int i = 0; i < 10000; i++) {
+                createAccount();
+            }
+        });
+
+        thread1.start();
+        thread2.start();
+
+        thread1.join();
+        thread2.join();
 
     }
 
@@ -41,7 +73,7 @@ public class OperationTest extends TestConfig{
     @Test
     public void createAccount(){
 
-        Transaction transaction = getOperationService().newTransaction(CREATOR_ADDRESS);
+        Transaction transaction = getOperationService().newTransaction(address);
 
         BlockchainKeyPair keyPair = SecureKeyGenerator.generateBubiKeyPair();
         LOGGER.info(GsonUtil.toJson(keyPair));
@@ -61,11 +93,22 @@ public class OperationTest extends TestConfig{
                     .build();
 
             // 可以拿到blob,让前端签名
-            TransactionBlob blob = transaction.buildAddOperation(createAccountOperation).generateBlob();
+            TransactionBlob blob = transaction
+                    .buildAddOperation(createAccountOperation)
+                    // 调用方可以在这里设置一个预期的区块偏移量，1个区块偏移量=3秒或1分钟，可以用3s进行推断，最快情况1分钟=20个区块偏移量
+                    .buildFinalNotifySeqOffset(Transaction.HIGHT_FINAL_NOTIFY_SEQ_OFFSET)
+                    .generateBlob();
+
+            //            try {
+            //                // 模拟用户操作等待
+            //                TimeUnit.SECONDS.sleep(65);
+            //            } catch (InterruptedException e) {
+            //                e.printStackTrace();
+            //            }
 
             // 签名完成之后可以继续提交,需要自己维护transaction保存
             TransactionCommittedResult result = transaction
-                    .buildAddSigner(CREATOR_PUBLIC_KEY, CREATOR_PRIVATE_KEY)
+                    .buildAddSigner(publicKey, privateKey)
                     //.buildAddDigest("公钥",new byte[]{}) 可以让前端的签名在这里加进来
                     .commit();
             resultProcess(result, "创建账号状态:");
@@ -79,13 +122,51 @@ public class OperationTest extends TestConfig{
         Assert.assertNotNull("新建的账号不能查询到", account);
     }
 
-    public static void issue(BlockchainKeyPair newAccount, String asset_code, Long amount) throws SdkException{
-        Transaction transaction = getOperationService().newTransaction(newAccount.getBubiAddress());
-        IssueAssetOperation issueAssetOperation = new IssueAssetOperation.Builder().buildAssetCode
-                (asset_code).buildAmount(amount).build();
-        transaction.buildAddOperation(issueAssetOperation)
-                .buildAddSigner(newAccount.getPubKey(), newAccount.getPriKey())
-                .commit();
+    /**
+     * 通过账户池发起交易
+     */
+    @Test
+    public void createAccountByPool(){
+
+        Transaction transaction = getOperationService().newTransactionByAccountPool();
+
+        BlockchainKeyPair keyPair = SecureKeyGenerator.generateBubiKeyPair();
+        LOGGER.info(GsonUtil.toJson(keyPair));
+        try {
+            CreateAccountOperation createAccountOperation = new CreateAccountOperation.Builder()
+                    .buildDestAddress(keyPair.getBubiAddress())
+                    .buildScript("function main(input) { /*do what ever you want*/ }")
+                    .buildAddMetadata("boot自定义key1", "boot自定义value1").buildAddMetadata("boot自定义key2", "boot自定义value2")
+                    // 权限部分
+                    .buildPriMasterWeight(15)
+                    .buildPriTxThreshold(15)
+                    .buildAddPriTypeThreshold(OperationTypeV3.CREATE_ACCOUNT, 8)
+                    .buildAddPriTypeThreshold(OperationTypeV3.SET_METADATA, 6)
+                    .buildAddPriTypeThreshold(OperationTypeV3.ISSUE_ASSET, 4)
+                    .buildAddPriSigner(SecureKeyGenerator.generateBubiKeyPair().getBubiAddress(), 10)
+                    .buildOperationMetadata("操作metadata")// 这个操作应该最后build
+                    .build();
+
+            TransactionBlob blob = transaction
+                    .buildAddOperation(createAccountOperation)
+                    // 调用方可以在这里设置一个预期的区块偏移量，1个区块偏移量=3秒或1分钟，可以用3s进行推断，最快情况1分钟=20个区块偏移量
+                    .buildFinalNotifySeqOffset(Transaction.HIGHT_FINAL_NOTIFY_SEQ_OFFSET)
+                    .generateBlob();
+
+
+            // 签名完成之后可以继续提交,需要自己维护transaction保存
+            TransactionCommittedResult result = transaction
+                    //.buildAddDigest("公钥",new byte[]{}) 可以让前端的签名在这里加进来
+                    .commit();
+            resultProcess(result, "创建账号状态:");
+
+        } catch (SdkException e) {
+            e.printStackTrace();
+        }
+
+        Account account = getQueryService().getAccount(keyPair.getBubiAddress());
+        LOGGER.info("新建的账号:" + GsonUtil.toJson(account));
+        Assert.assertNotNull("新建的账号不能查询到", account);
     }
 
     /**

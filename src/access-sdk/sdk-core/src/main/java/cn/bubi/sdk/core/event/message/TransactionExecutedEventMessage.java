@@ -1,6 +1,6 @@
 package cn.bubi.sdk.core.event.message;
 
-public class TransactionExecutedEventMessage{
+public class TransactionExecutedEventMessage implements EventMessage{
 
     private String hash;
 

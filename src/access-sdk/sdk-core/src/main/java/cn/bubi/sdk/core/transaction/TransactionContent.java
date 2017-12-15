@@ -25,7 +25,7 @@ public class TransactionContent{
     /**
      * 注意这里的queueLen为实际缓存大小queueLen*1000
      */
-    private static void changeQueueLen(int queueLen){
+    public static void changeQueueLen(int queueLen){
         CACHE.queueLen = queueLen;
     }
 

@@ -16,8 +16,6 @@
 
 package cn.bubi.access.utils.spring;
 
-import com.sun.istack.internal.Nullable;
-
 import java.io.*;
 import java.nio.charset.Charset;
 
@@ -49,7 +47,7 @@ public abstract class StreamUtils{
      * @return the new byte array that has been copied to (possibly empty)
      * @throws IOException in case of I/O errors
      */
-    public static byte[] copyToByteArray(@Nullable InputStream in) throws IOException{
+    public static byte[] copyToByteArray(InputStream in) throws IOException{
         if (in == null) {
             return new byte[0];
         }
@@ -67,7 +65,7 @@ public abstract class StreamUtils{
      * @return the String that has been copied to (possibly empty)
      * @throws IOException in case of I/O errors
      */
-    public static String copyToString(@Nullable InputStream in, Charset charset) throws IOException{
+    public static String copyToString(InputStream in, Charset charset) throws IOException{
         if (in == null) {
             return "";
         }

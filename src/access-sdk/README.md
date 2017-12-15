@@ -17,6 +17,7 @@ Access-SDK 使用说明
     - [5设置 修改门限](#5设置-修改门限)  
     - [6合约调用](#6合约调用)  
     - [7业务分支返回形式](#7业务分支返回形式)  
+    - [8发起人账户池使用](#8发起人账户池使用)  
 
 
 ----------
@@ -32,7 +33,7 @@ Access-SDK 使用说明
 1提供负载访问底层的能力  
 2对底层通知的监听，同步交易  
 3对底层支持的操作便捷创建，生成blob  
-4本SDK的交易发起人seq现采用内存管理，如果使用方应用集群，那么必须配置seq服务，否则将会导致交易失败率很高。  
+4本SDK的交易发起人seq默认采用内存管理，如果使用方应用集群，那么必须配置seq服务，SDK所支持的seq服务内置依赖redis，使用方可以根据自身情况实现自定义seq服务  
 
 
 ----------
@@ -51,12 +52,18 @@ SDK本身无任何依赖框架，使用时载入配置即可运行，考虑到�
 
 ### 1简单的config配置使用
 ``` java
+
 public class Config{
 
     private BcOperationService operationService;
     private BcQueryService queryService;
 
+    static final String CREATOR_ADDRESS = "a0012ea403227b861289ed5fcedd30e51e85ef7397ebc6";
+    static final String CREATOR_PUBLIC_KEY = "b001e9fd31a0fc25af3123f67575cdd0c6b8c2192eead9f58728a3fb46accdc0faa67f";
+    static final String CREATOR_PRIVATE_KEY = "c0018335e8c3e34cceaa24027207792318bc388bea443b53d5ba9e00e5adb6739bb61b";
+
     public void configSdk() throws SdkException{
+
 
         String eventUtis = "ws://192.168.10.100:7053,ws://192.168.10.110:7053,ws://192.168.10.120:7053,ws://192.168.10.130:7053";
         String ips = "192.168.10.100:29333,192.168.10.110:29333,192.168.10.120:29333,192.168.10.130:29333";
@@ -71,12 +78,11 @@ public class Config{
                 })
                 .filter(Objects:: nonNull).collect(Collectors.toList());
 
-
         // 1 配置nodeManager
         NodeManager nodeManager = new NodeManager(rpcServiceConfigList);
 
         // 2 配置rpcService
-        RpcService rpcService = new RpcServiceLoadBalancing(rpcServiceConfigList, nodeManager);
+        RpcService rpcService = new RpcServiceLoadBalancer(rpcServiceConfigList, nodeManager);
 
         // 3 配置mq以及配套设施 可以配置多个节点监听，收到任意监听结果均可处理
         TxFailManager txFailManager = new TxFailManager(rpcService);
@@ -95,8 +101,11 @@ public class Config{
         TransactionSyncManager transactionSyncManager = new TransactionSyncManager();
         transactionSyncManager.init();
 
+        // 初始化账户池
+        SponsorAccountPoolManager sponsorAccountPoolManager = new SponsorAccountPoolManager(new DefaultSponsorAccountFactory());
+
         // 6 初始化同步通知器与区块增长通知器
-        EventHandler notifyEventHandler = new TransactionNotifyEventHandler(sequenceManager, transactionSyncManager);
+        EventHandler notifyEventHandler = new TransactionNotifyEventHandler(sequenceManager, transactionSyncManager, sponsorAccountPoolManager);
         EventHandler seqIncreaseEventHandler = new LedgerSeqIncreaseEventHandler(txFailManager, nodeManager);
 
         // 7 配置事件总线
@@ -104,7 +113,9 @@ public class Config{
         EventBusService.addEventHandler(seqIncreaseEventHandler);
 
         // 8 初始化spi
-        BcOperationService operationService = new BcOperationServiceImpl(sequenceManager, rpcService, transactionSyncManager, nodeManager, txFailManager);
+        BcOperationService operationService = new BcOperationServiceImpl(sequenceManager, rpcService, transactionSyncManager, nodeManager, txFailManager, sponsorAccountPoolManager);
+        sponsorAccountPoolManager.initPool(operationService, CREATOR_ADDRESS, CREATOR_PUBLIC_KEY, CREATOR_PRIVATE_KEY, 50, "classpath:customPoolFile.txt", "test-mark");
+
         BcQueryService queryService = new BcQueryServiceImpl(rpcService);
 
         this.operationService = operationService;
@@ -134,10 +145,33 @@ public class Config{
 ### 2基于Spring Boot的starter方式自动配置
 
 在application.properties中配置参数，如：
-```java 
+```ruby 
+
 # sdk config
 blockchain.event.uri=ws://192.168.10.100:7053,ws://192.168.10.110:7053,ws://192.168.10.120:7053,ws://192.168.10.130:7053
 blockchain.node.ip=192.168.10.100:29333,192.168.10.110:29333,192.168.10.120:29333,192.168.10.130:29333
+
+# 账户池配置
+blockchain.account-pool.enable=true
+blockchain.account-pool.address=a0012ea403227b861289ed5fcedd30e51e85ef7397ebc6
+blockchain.account-pool.public-key=b001e9fd31a0fc25af3123f67575cdd0c6b8c2192eead9f58728a3fb46accdc0faa67f
+blockchain.account-pool.private-key=c0018335e8c3e34cceaa24027207792318bc388bea443b53d5ba9e00e5adb6739bb61b
+blockchain.account-pool.pool-size=12
+# !!!注意下这里的文件路径!!!
+# 建议不配置或开发环境使用classpath:开头的项目资源路径，服务器环境默认将忽略此路径
+# 如果不填写，默认的开发环境文件路径为resources下的sponsorAccountPool.poolFile文件,
+# 默认的服务器环境文件路径为项目启动路径下的config/sponsorAccountPool.poolFile文件
+blockchain.account-pool.file-path=classpath:starterTest.poolFile
+# 如果使用绝对路径，那么服务器打包之后的路径如果没有覆盖，将会使用这里的绝对路径
+# 如果使用相对路径会报错!!!
+#blockchain.account-pool.file-path=/Users/chao/Downloads/starterTest1.poolFile
+blockchain.account-pool.sponsor-account-mark=starter-test
+
+# redis seq管理的支持 这个功能默认是关闭的
+blockchain.redis-seq.enable=true
+blockchain.redis-seq.redis[0].host=192.168.10.73
+blockchain.redis-seq.redis[0].port=10379
+blockchain.redis-seq.redis[0].password=bubi888
 ```
 还需要项目依赖引入sdk-starter
 ```java
@@ -182,8 +216,20 @@ public void createAccount(){
                 .buildOperationMetadata("操作metadata")// 这个操作应该最后build
                 .build();
 
-        // 可以拿到blob,让前端签名
-        TransactionBlob blob = transaction.buildAddOperation(createAccountOperation).generateBlob();
+            // 可以拿到blob,让前端签名
+            TransactionBlob blob = transaction
+                    .buildAddOperation(createAccountOperation)
+                    // 调用方可以在这里设置一个预期的区块偏移量，1个区块偏移量=3秒或1分钟，可以用3s进行推断，最快情况1分钟=20个区块偏移量
+                    .buildFinalNotifySeqOffset(Transaction.HIGHT_FINAL_NOTIFY_SEQ_OFFSET)
+                    .generateBlob();
+
+            try {
+                // 模拟用户操作等待
+                TimeUnit.SECONDS.sleep(65);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
 
         // 签名完成之后可以继续提交,需要自己维护transaction保存
         TransactionCommittedResult result = transaction
@@ -451,7 +497,33 @@ public void illegalPublicKeyTest(){
 
 > 大多数失败情况的业务就是回滚数据库和转换调用方异常，主要是确保，交易失败时不要继续执行调用方正常业务
 
+## 8发起人账户池使用 ##
+通过账户池发起交易无需使用方对发起人签名，提交时账户池会自动为此笔交易签名
+```java
 
+/**
+ * 通过账户池发起交易
+ */
+public void createAccountByPool(){
+
+    try{
+    // 账户池发起,无需填写发起人
+    Transaction transaction = getOperationService().newTransactionByAccountPool();
+    
+    // ...正常操作
+    
+    // 提交时,不需要发起人签名
+    // 交易如果指定交易发起人，那必须要添加操作中指定发起人的签名，否则将提示签名失败
+    TransactionCommittedResult result = transaction
+                .commit();
+
+    } catch (SdkException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+> 建议调用方在调用系统发起交易时使用账户池，而用户自身操作建议由用户自身发起，发起人信息会记录到区块中存储。
 
 ![结束][1]
  

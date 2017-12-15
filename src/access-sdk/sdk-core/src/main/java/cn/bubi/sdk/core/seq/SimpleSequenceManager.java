@@ -3,6 +3,8 @@ package cn.bubi.sdk.core.seq;
 import cn.bubi.access.adaptation.blockchain.bc.RpcService;
 import cn.bubi.access.adaptation.blockchain.bc.response.Account;
 import cn.bubi.access.adaptation.blockchain.exception.BlockchainError;
+import cn.bubi.sdk.core.event.message.TransactionExecutedEventMessage;
+import cn.bubi.sdk.core.event.source.EventSourceEnum;
 import cn.bubi.sdk.core.exception.SdkException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,9 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 简单实现部分，异常时回滚没有考虑，尽量将超时时间设置的短
+ * 简单基于内存实现seq管理
  */
-public class SimpleSequenceManager implements SequenceManager{
+public class SimpleSequenceManager extends AbstractSequenceManager{
 
     private static Logger LOGGER = LoggerFactory.getLogger(SimpleSequenceManager.class);
 
@@ -22,10 +24,11 @@ public class SimpleSequenceManager implements SequenceManager{
 
     private final Object mapMutex = new Object();
     private volatile boolean running = true;
-    private long EXPIRED_MILLIS = 3 * 1000;
+    private long EXPIRED_MILLIS = 15 * 1000;
     private Map<String, SequenceNumber> snMap = new ConcurrentHashMap<>();
 
     public SimpleSequenceManager(RpcService rpcService){
+        super(EventSourceEnum.TRANSACTION_NOTIFY.getEventSource(), TransactionExecutedEventMessage.class);
         this.rpcService = rpcService;
     }
 
@@ -66,9 +69,7 @@ public class SimpleSequenceManager implements SequenceManager{
         SequenceNumber sn = snMap.get(address);
         if (sn == null) {
             synchronized (mapMutex) {
-                sn = snMap.get(address);
-                sn = new SequenceNumber(address);
-                snMap.put(address, sn);
+                sn = snMap.computeIfAbsent(address, SequenceNumber::new);
             }
         }
 
@@ -77,8 +78,18 @@ public class SimpleSequenceManager implements SequenceManager{
 
     @Override
     public void reset(String address){
+        if (address == null) {
+            return;
+        }
         LOGGER.debug("SEQUENCEBUNBER RESET! --[address=" + address + "]");
         snMap.remove(address);
+    }
+
+    @Override
+    public void processMessage(TransactionExecutedEventMessage message){
+        if (!message.getSuccess()) {
+            reset(message.getSponsorAddress());
+        }
     }
 
     /**

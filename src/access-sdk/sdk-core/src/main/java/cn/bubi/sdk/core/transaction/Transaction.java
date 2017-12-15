@@ -16,6 +16,7 @@ import cn.bubi.sdk.core.exception.SdkError;
 import cn.bubi.sdk.core.exception.SdkException;
 import cn.bubi.sdk.core.operation.BcOperation;
 import cn.bubi.sdk.core.operation.BuildConsume;
+import cn.bubi.sdk.core.pool.SponsorAccount;
 import cn.bubi.sdk.core.seq.SequenceManager;
 import cn.bubi.sdk.core.transaction.model.Digest;
 import cn.bubi.sdk.core.transaction.model.Signature;
@@ -30,6 +31,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,13 +41,19 @@ import java.util.List;
  * 表示一笔交易执行,并不能表示事务
  * 线程不安全，多个线程不要共享一个交易操作
  */
-public class Transaction{
+public class Transaction implements Serializable{
 
+    private static final long serialVersionUID = 1108679394044246914L;
     private Logger logger = LoggerFactory.getLogger(Transaction.class);
-    public static final int FAIL_LIMIT_SEQ = 2;// 间隔2个seq作为失败确认
+
+    public static final int LOW_FINAL_NOTIFY_SEQ_OFFSET = 10;
+    public static final int MID_FINAL_NOTIFY_SEQ_OFFSET = 20;
+    public static final int HIGHT_FINAL_NOTIFY_SEQ_OFFSET = 30;
 
     private String sponsorAddress;// 发起人
     private long nonce;// 生成blob时再去获取
+    // 调用方可以自己设定seq偏移量，一个区块偏移量对应的时间为3秒或一分钟,建议区间[2,30]
+    private int finalNotifySeqOffset = MID_FINAL_NOTIFY_SEQ_OFFSET;
     private List<BcOperation> operationList = new ArrayList<>();// 操作列表
     private List<Signature> signatures = new ArrayList<>();// 签名列表
     private List<Digest> digests = new ArrayList<>();// 签名摘要列表
@@ -60,8 +68,10 @@ public class Transaction{
     private TxFailManager txFailManager;
 
     private boolean complete = false;
-    private static final int TX_COMMITING_TIMEOUT = 18 * 1000;
 
+    /**
+     * 正常发起人发起
+     */
     public Transaction(String sponsorAddress, SequenceManager sequenceManager, RpcService rpcService, TransactionSyncManager transactionSyncManager, NodeManager nodeManager, TxFailManager txFailManager){
         this.sponsorAddress = sponsorAddress;
         this.sequenceManager = sequenceManager;
@@ -71,12 +81,24 @@ public class Transaction{
         this.txFailManager = txFailManager;
     }
 
+    /**
+     * 通过账户池发起
+     */
+    public Transaction(SponsorAccount sponsorAccount, SequenceManager sequenceManager, RpcService rpcService, TransactionSyncManager transactionSyncManager, NodeManager nodeManager, TxFailManager txFailManager){
+        this(sponsorAccount.getAddress(), sequenceManager, rpcService, transactionSyncManager, nodeManager, txFailManager);
+        this.signatures.add(new Signature(sponsorAccount.getPublicKey(), sponsorAccount.getPrivateKey()));
+    }
+
     public Transaction buildAddSigner(String publicKey, String privateKey) throws SdkException{
         return buildTemplate(() -> signatures.add(new Signature(publicKey, privateKey)));
     }
 
     public Transaction buildAddDigest(String publicKey, byte[] originDigest) throws SdkException{
         return buildTemplate(() -> digests.add(new Digest(publicKey, originDigest)));
+    }
+
+    public Transaction buildFinalNotifySeqOffset(int offset) throws SdkException{
+        return buildTemplate(() -> finalNotifySeqOffset = offset);
     }
 
     public Transaction buildAddOperation(BcOperation operation) throws SdkException{
@@ -139,12 +161,10 @@ public class Transaction{
         complete();
         checkCommitStatus();
         TransactionCommittedResult committedResult = new TransactionCommittedResult();
+        String txHash = transactionBlob.getHash();
+        logger.debug("提交交易txHash=" + txHash);
+        AsyncFutureTx txFuture = new AsyncFutureTx(txHash);
         try {
-            String txHash = transactionBlob.getHash();
-
-            logger.debug("提交交易txHash=" + txHash);
-
-            AsyncFutureTx txFuture = new AsyncFutureTx(txHash);
             transactionSyncManager.addAsyncFutureTx(txFuture);
 
             try {
@@ -152,7 +172,6 @@ public class Transaction{
                 verifyPre(subTransactionRequest);
                 rpcService.submitTransaction(subTransactionRequest);
             } catch (RuntimeException e) {
-                transactionSyncManager.remove(txFuture);
                 if (e instanceof HttpServiceException && e.getCause() instanceof BlockchainException) {
                     throw new SdkException((BlockchainException) e.getCause());
                 }
@@ -161,12 +180,8 @@ public class Transaction{
 
             if (sync) {
 
-                boolean timeout = !txFuture.awaitUninterruptibly(TX_COMMITING_TIMEOUT);
+                txFuture.await();
 
-                if (timeout) {
-                    logger.warn(String.format("Transaction sync commit timeout! --[Hash=%s][MaxTimeout=%s]", txHash, TX_COMMITING_TIMEOUT));
-                    throw new SdkException(SdkError.TRANSACTION_ERROR_TIMEOUT);
-                }
                 if (!success(txFuture.getErrorCode())) {
                     throw new SdkException(Integer.valueOf(txFuture.getErrorCode()), txFuture.getErrorMessage());
                 }
@@ -174,11 +189,15 @@ public class Transaction{
             }
 
             committedResult.setHash(txHash);
-
-            transactionSyncManager.remove(txFuture);
         } catch (Exception e) {
             sequenceManager.reset(sponsorAddress);
-            throw e;
+            try {
+                throw e;
+            } catch (InterruptedException e1) {
+                logger.error("submit transaction found InterruptedException:", e1);
+            }
+        } finally {
+            transactionSyncManager.remove(txFuture);
         }
 
         return committedResult;
@@ -199,22 +218,21 @@ public class Transaction{
         builder.setSourceAddress(sponsorAddress);
         builder.setNonce(nonce);
 
-        long nowSeq = nodeManager.getLastSeq();
-        long maxSeq = nowSeq + FAIL_LIMIT_SEQ;
-        logger.debug("last seq:" + maxSeq);
+        long specifiedSeq = nodeManager.getLastSeq() + finalNotifySeqOffset;
+        logger.debug("specified seq:" + specifiedSeq);
 
         for (BcOperation bcOperation : operationList) {
-            bcOperation.buildTransaction(builder, maxSeq);
+            bcOperation.buildTransaction(builder, specifiedSeq);
         }
 
         cn.bubi.blockchain.adapter3.Chain.Transaction transaction = builder.build();
         logger.info("transaction:" + transaction);
         byte[] bytesBlob = transaction.toByteArray();
 
-        TransactionBlob transactionBlob = new TransactionBlob(bytesBlob);
+        TransactionBlob transactionBlob = new TransactionBlob(bytesBlob, nodeManager.getCurrentSupportHashType());
 
-        // 针对交易比较少时的通知机制
-        txFailManager.addFailEventHash(nowSeq, transactionBlob.getHash());
+        // 设置最长等待超时通知
+        txFailManager.finalNotifyFailEvent(specifiedSeq, transactionBlob.getHash(), SdkError.TRANSACTION_ERROR_TIMEOUT);
 
         return transactionBlob;
     }

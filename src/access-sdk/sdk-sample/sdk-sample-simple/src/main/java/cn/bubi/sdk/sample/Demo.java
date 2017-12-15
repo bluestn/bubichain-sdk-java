@@ -4,6 +4,8 @@ import cn.bubi.access.adaptation.blockchain.bc.OperationTypeV3;
 import cn.bubi.access.adaptation.blockchain.bc.response.Account;
 import cn.bubi.access.utils.blockchain.BlockchainKeyPair;
 import cn.bubi.access.utils.blockchain.SecureKeyGenerator;
+import cn.bubi.sdk.core.config.SDKConfig;
+import cn.bubi.sdk.core.config.SDKProperties;
 import cn.bubi.sdk.core.exception.SdkException;
 import cn.bubi.sdk.core.operation.impl.CreateAccountOperation;
 import cn.bubi.sdk.core.spi.BcOperationService;
@@ -25,8 +27,24 @@ public class Demo{
 
     public static void main(String[] args) throws SdkException{
 
-        Config config = new Config();
-        config.configSdk();
+        String eventUtis = "ws://192.168.10.100:7053,ws://192.168.10.110:7053,ws://192.168.10.120:7053,ws://192.168.10.130:7053";
+        String ips = "192.168.10.100:29333,192.168.10.110:29333,192.168.10.120:29333,192.168.10.130:29333";
+
+        SDKConfig config = new SDKConfig();
+        SDKProperties sdkProperties = new SDKProperties();
+        sdkProperties.setEventUtis(eventUtis);
+        sdkProperties.setIps(ips);
+        sdkProperties.setAccountPoolEnable(true);
+        sdkProperties.setAddress(address);
+        sdkProperties.setPublicKey(publicKey);
+        sdkProperties.setPrivateKey(privateKey);
+        sdkProperties.setSize(12);
+        sdkProperties.setMark("test-demo-config");
+        sdkProperties.setRedisSeqManagerEnable(true);
+        sdkProperties.setHost("192.168.10.73");
+        sdkProperties.setPort(10379);
+        sdkProperties.setPassword("bubi888");
+        config.configSdk(sdkProperties);
 
         // 进行查询
         BcQueryService queryService = config.getQueryService();

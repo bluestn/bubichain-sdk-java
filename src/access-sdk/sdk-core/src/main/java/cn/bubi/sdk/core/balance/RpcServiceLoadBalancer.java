@@ -3,11 +3,13 @@ package cn.bubi.sdk.core.balance;
 import cn.bubi.access.adaptation.blockchain.bc.RpcService;
 import cn.bubi.access.adaptation.blockchain.bc.request.SubTransactionRequest;
 import cn.bubi.access.adaptation.blockchain.bc.response.Account;
+import cn.bubi.access.adaptation.blockchain.bc.response.Hello;
 import cn.bubi.access.adaptation.blockchain.bc.response.TransactionHistory;
 import cn.bubi.access.adaptation.blockchain.bc.response.converter.ServiceResponse;
 import cn.bubi.access.adaptation.blockchain.bc.response.ledger.Ledger;
 import cn.bubi.access.adaptation.blockchain.bc.response.operation.SetMetadata;
 import cn.bubi.access.adaptation.blockchain.exception.BlockchainException;
+import cn.bubi.baas.utils.http.HttpStatusException;
 import cn.bubi.baas.utils.http.agent.HttpServiceAgent;
 import cn.bubi.baas.utils.http.agent.ServiceEndpoint;
 import cn.bubi.sdk.core.balance.model.RpcServiceConfig;
@@ -15,16 +17,13 @@ import cn.bubi.sdk.core.balance.model.RpcServiceContent;
 import cn.bubi.sdk.core.exception.ExceptionUtil;
 import cn.bubi.sdk.core.exception.SdkError;
 import cn.bubi.sdk.core.exception.SdkException;
-import cn.bubi.sdk.core.utils.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -34,13 +33,13 @@ import java.util.stream.Collectors;
  * 负载访问底层节点
  * 负载策略：取最高区块节点进行访问
  */
-public class RpcServiceLoadBalancing implements RpcService{
+public class RpcServiceLoadBalancer implements RpcService{
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RpcServiceLoadBalancing.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RpcServiceLoadBalancer.class);
 
     private RpcService rpcServiceProxy;
 
-    public RpcServiceLoadBalancing(List<RpcServiceConfig> rpcServiceConfigs, NodeManager nodeManager){
+    public RpcServiceLoadBalancer(List<RpcServiceConfig> rpcServiceConfigs, NodeManager nodeManager){
         if (rpcServiceConfigs == null || rpcServiceConfigs.isEmpty())
             throw new BlockchainException("Origin RpcServiceConfig at least one!！");
 
@@ -51,13 +50,18 @@ public class RpcServiceLoadBalancing implements RpcService{
             return new RpcServiceContent(rpcServiceConfig.getHost(), rpcService);
         }).collect(Collectors.toList());
 
-        this.rpcServiceProxy = (RpcService) Proxy.newProxyInstance(RpcServiceLoadBalancing.class.getClassLoader(), new Class[] {RpcService.class},
+        this.rpcServiceProxy = (RpcService) Proxy.newProxyInstance(RpcServiceLoadBalancer.class.getClassLoader(), new Class[] {RpcService.class},
                 new RpcServiceInterceptor(rpcServiceContents, nodeManager));
     }
 
     @Override
     public Account getAccount(String address){
         return rpcServiceProxy.getAccount(address);
+    }
+
+    @Override
+    public Hello hello(){
+        return rpcServiceProxy.hello();
     }
 
     @Override
@@ -107,6 +111,7 @@ public class RpcServiceLoadBalancing implements RpcService{
         private ExecutorService rpcExecutor = new
                 ThreadPoolExecutor(10, 200, 60, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(1000));
+        private int httpStatusTimeout = 408;
 
 
         RpcServiceInterceptor(List<RpcServiceContent> originRpcServiceContent, NodeManager nodeManager){
@@ -116,15 +121,54 @@ public class RpcServiceLoadBalancing implements RpcService{
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable{
-            // 访问底层节点
-            String useHost = nodeManager.getLastHost();
-            RpcService rpcService = hostRpcMapping.get(useHost);
-            Assert.notNull(rpcService, SdkError.EVENT_ERROR_ROUTER_HOST_FAIL);
+            Set<String> usedHosts = new HashSet<>();
+            String firstHost = nodeManager.getLastHost();
+            usedHosts.add(firstHost);
 
-            LOGGER.info("load balance call rpc service router host : " + useHost + " , method : " + method.getName());
+            Object result;
+            String useHost = firstHost;
 
-            // todo 可以增强负载能力，失败判断是否连接超时，转到其它rpcService
+            while (true) {
+                try {
+                    result = doInvoke(useHost, method, args);
+                    break;
+                } catch (Throwable t) {
+                    useHost = processThrowable(usedHosts, t);
+                }
+            }
+
+            return result;
+        }
+
+        private String processThrowable(final Set<String> usedHosts, Throwable t) throws Throwable{
+            // 对http超时408切换节点访问
+            if (t instanceof HttpStatusException && ((HttpStatusException) t).getHttpCode() == httpStatusTimeout) {
+
+                Set<String> allHosts = new HashSet<>(nodeManager.getAllHosts());
+                usedHosts.forEach(allHosts:: remove);
+
+                if (allHosts.iterator().hasNext()) {
+                    String nowHost = allHosts.iterator().next();
+                    LOGGER.info("route http status code 408. now switch to host : " + nowHost);
+                    usedHosts.add(nowHost);
+                    return nowHost;
+                }
+            }
+
+            throw t;
+        }
+
+        private Object doInvoke(String useHost, Method method, Object[] args) throws Throwable{
             try {
+                // 访问底层节点
+                RpcService rpcService = hostRpcMapping.get(useHost);
+                if (rpcService == null) {
+                    LOGGER.warn("router host : " + useHost + " ,but hostRpcMapping not found. hostRpcMapping keys:" + hostRpcMapping.keySet());
+                    throw new SdkException(SdkError.EVENT_ERROR_ROUTER_HOST_FAIL);
+                }
+
+                LOGGER.info("load balance call rpc service router host : " + useHost + " , method : " + method.getName());
+
                 // 增加了超时连接时间控制
                 Future future = rpcExecutor.submit(() -> method.invoke(rpcService, args));
                 return future.get(30, TimeUnit.SECONDS);
@@ -134,6 +178,7 @@ public class RpcServiceLoadBalancing implements RpcService{
                 }
                 throw ExceptionUtil.unwrapThrowable(e);
             }
+
         }
     }
 

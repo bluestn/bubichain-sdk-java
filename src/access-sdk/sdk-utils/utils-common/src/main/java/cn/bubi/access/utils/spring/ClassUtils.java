@@ -16,8 +16,6 @@
 
 package cn.bubi.access.utils.spring;
 
-import com.sun.istack.internal.Nullable;
-
 import java.beans.Introspector;
 import java.lang.reflect.*;
 import java.util.*;
@@ -159,7 +157,7 @@ public abstract class ClassUtils{
      * @see Thread#getContextClassLoader()
      * @see ClassLoader#getSystemClassLoader()
      */
-    @Nullable
+    
     public static ClassLoader getDefaultClassLoader(){
         ClassLoader cl = null;
         try {
@@ -190,8 +188,8 @@ public abstract class ClassUtils{
      * @param classLoaderToUse the actual ClassLoader to use for the thread context
      * @return the original thread context ClassLoader, or {@code null} if not overridden
      */
-    @Nullable
-    public static ClassLoader overrideThreadContextClassLoader(@Nullable ClassLoader classLoaderToUse){
+
+    public static ClassLoader overrideThreadContextClassLoader(ClassLoader classLoaderToUse){
         Thread currentThread = Thread.currentThread();
         ClassLoader threadContextClassLoader = currentThread.getContextClassLoader();
         if (classLoaderToUse != null && !classLoaderToUse.equals(threadContextClassLoader)) {
@@ -216,7 +214,7 @@ public abstract class ClassUtils{
      * @throws LinkageError           if the class file could not be loaded
      * @see Class#forName(String, boolean, ClassLoader)
      */
-    public static Class<?> forName(String name, @Nullable ClassLoader classLoader)
+    public static Class<?> forName(String name, ClassLoader classLoader)
             throws ClassNotFoundException, LinkageError{
 
         Assert.notNull(name, "Name must not be null");
@@ -286,7 +284,7 @@ public abstract class ClassUtils{
      *                                  (that is, the class could not be found or the class file could not be loaded)
      * @see #forName(String, ClassLoader)
      */
-    public static Class<?> resolveClassName(String className, @Nullable ClassLoader classLoader) throws IllegalArgumentException{
+    public static Class<?> resolveClassName(String className, ClassLoader classLoader) throws IllegalArgumentException{
         try {
             return forName(className, classLoader);
         } catch (ClassNotFoundException ex) {
@@ -308,8 +306,8 @@ public abstract class ClassUtils{
      * @return the primitive class, or {@code null} if the name does not denote
      * a primitive class or primitive array class
      */
-    @Nullable
-    public static Class<?> resolvePrimitiveClassName(@Nullable String name){
+
+    public static Class<?> resolvePrimitiveClassName(String name){
         Class<?> result = null;
         // Most class names will be quite long, considering that they
         // SHOULD sit in a package, so a length check is worthwhile.
@@ -330,7 +328,7 @@ public abstract class ClassUtils{
      *                    (may be {@code null}, which indicates the default class loader)
      * @return whether the specified class is present
      */
-    public static boolean isPresent(String className, @Nullable ClassLoader classLoader){
+    public static boolean isPresent(String className, ClassLoader classLoader){
         try {
             forName(className, classLoader);
             return true;
@@ -377,7 +375,7 @@ public abstract class ClassUtils{
      * @param clazz       the class to analyze
      * @param classLoader the ClassLoader to potentially cache metadata in
      */
-    public static boolean isCacheSafe(Class<?> clazz, @Nullable ClassLoader classLoader){
+    public static boolean isCacheSafe(Class<?> clazz, ClassLoader classLoader){
         Assert.notNull(clazz, "Class must not be null");
         try {
             ClassLoader target = clazz.getClassLoader();
@@ -520,7 +518,7 @@ public abstract class ClassUtils{
      * @return the qualified name of the method
      * @since 4.3.4
      */
-    public static String getQualifiedMethodName(Method method, @Nullable Class<?> clazz){
+    public static String getQualifiedMethodName(Method method, Class<?> clazz){
         Assert.notNull(method, "Method must not be null");
         return (clazz != null ? clazz : method.getDeclaringClass()).getName() + '.' + method.getName();
     }
@@ -533,8 +531,8 @@ public abstract class ClassUtils{
      * @param value the value to introspect
      * @return the qualified name of the class
      */
-    @Nullable
-    public static String getDescriptiveType(@Nullable Object value){
+
+    public static String getDescriptiveType(Object value){
         if (value == null) {
             return null;
         }
@@ -561,7 +559,7 @@ public abstract class ClassUtils{
      * @param clazz    the class to check
      * @param typeName the type name to match
      */
-    public static boolean matchesTypeName(Class<?> clazz, @Nullable String typeName){
+    public static boolean matchesTypeName(Class<?> clazz, String typeName){
         return (typeName != null &&
                 (typeName.equals(clazz.getTypeName()) || typeName.equals(clazz.getSimpleName())));
     }
@@ -590,7 +588,7 @@ public abstract class ClassUtils{
      * @return the constructor, or {@code null} if not found
      * @see Class#getConstructor
      */
-    @Nullable
+
     public static <T> Constructor<T> getConstructorIfAvailable(Class<T> clazz, Class<?>... paramTypes){
         Assert.notNull(clazz, "Class must not be null");
         try {
@@ -629,7 +627,7 @@ public abstract class ClassUtils{
      * @throws IllegalStateException if the method has not been found
      * @see Class#getMethod
      */
-    public static Method getMethod(Class<?> clazz, String methodName, @Nullable Class<?>... paramTypes){
+    public static Method getMethod(Class<?> clazz, String methodName, Class<?>... paramTypes){
         Assert.notNull(clazz, "Class must not be null");
         Assert.notNull(methodName, "Method name must not be null");
         if (paramTypes != null) {
@@ -670,8 +668,8 @@ public abstract class ClassUtils{
      * @return the method, or {@code null} if not found
      * @see Class#getMethod
      */
-    @Nullable
-    public static Method getMethodIfAvailable(Class<?> clazz, String methodName, @Nullable Class<?>... paramTypes){
+
+    public static Method getMethodIfAvailable(Class<?> clazz, String methodName, Class<?>... paramTypes){
         Assert.notNull(clazz, "Class must not be null");
         Assert.notNull(methodName, "Method name must not be null");
         if (paramTypes != null) {
@@ -771,7 +769,7 @@ public abstract class ClassUtils{
      * @return the specific target method, or the original method if the
      * {@code targetClass} doesn't implement it or is {@code null}
      */
-    public static Method getMostSpecificMethod(Method method, @Nullable Class<?> targetClass){
+    public static Method getMostSpecificMethod(Method method, Class<?> targetClass){
         if (isOverridable(method, targetClass) &&
                 targetClass != null && targetClass != method.getDeclaringClass()) {
             try {
@@ -820,7 +818,7 @@ public abstract class ClassUtils{
      * @param method      the method to check
      * @param targetClass the target class to check against
      */
-    private static boolean isOverridable(Method method, @Nullable Class<?> targetClass){
+    private static boolean isOverridable(Method method, Class<?> targetClass){
         if (Modifier.isPrivate(method.getModifiers())) {
             return false;
         }
@@ -840,7 +838,7 @@ public abstract class ClassUtils{
      * @return the static method, or {@code null} if no static method was found
      * @throws IllegalArgumentException if the method name is blank or the clazz is null
      */
-    @Nullable
+
     public static Method getStaticMethod(Class<?> clazz, String methodName, Class<?>... args){
         Assert.notNull(clazz, "Class must not be null");
         Assert.notNull(methodName, "Method name must not be null");
@@ -953,7 +951,7 @@ public abstract class ClassUtils{
      * @param value the value that should be assigned to the type
      * @return if the type is assignable from the value
      */
-    public static boolean isAssignableValue(Class<?> type, @Nullable Object value){
+    public static boolean isAssignableValue(Class<?> type, Object value){
         Assert.notNull(type, "Type must not be null");
         return (value != null ? isAssignable(type, value.getClass()) : !type.isPrimitive());
     }
@@ -1021,7 +1019,7 @@ public abstract class ClassUtils{
      * @see ClassLoader#getResource
      * @see Class#getResource
      */
-    public static String classPackageAsResourcePath(@Nullable Class<?> clazz){
+    public static String classPackageAsResourcePath(Class<?> clazz){
         if (clazz == null) {
             return "";
         }
@@ -1058,7 +1056,7 @@ public abstract class ClassUtils{
      * @return a String of form "[com.foo.Bar, com.foo.Baz]"
      * @see java.util.AbstractCollection#toString()
      */
-    public static String classNamesToString(@Nullable Collection<Class<?>> classes){
+    public static String classNamesToString(Collection<Class<?>> classes){
         if (CollectionUtils.isEmpty(classes)) {
             return "[]";
         }
@@ -1082,8 +1080,8 @@ public abstract class ClassUtils{
      * @return the Class array ({@code null} if the passed-in
      * Collection was {@code null})
      */
-    @Nullable
-    public static Class<?>[] toClassArray(@Nullable Collection<Class<?>> collection){
+
+    public static Class<?>[] toClassArray(Collection<Class<?>> collection){
         if (collection == null) {
             return null;
         }
@@ -1124,7 +1122,7 @@ public abstract class ClassUtils{
      *                    (may be {@code null} when accepting all declared interfaces)
      * @return all interfaces that the given object implements as an array
      */
-    public static Class<?>[] getAllInterfacesForClass(Class<?> clazz, @Nullable ClassLoader classLoader){
+    public static Class<?>[] getAllInterfacesForClass(Class<?> clazz, ClassLoader classLoader){
         Set<Class<?>> ifcs = getAllInterfacesForClassAsSet(clazz, classLoader);
         return ifcs.toArray(new Class<?>[ifcs.size()]);
     }
@@ -1163,7 +1161,7 @@ public abstract class ClassUtils{
      *                    (may be {@code null} when accepting all declared interfaces)
      * @return all interfaces that the given object implements as a Set
      */
-    public static Set<Class<?>> getAllInterfacesForClassAsSet(Class<?> clazz, @Nullable ClassLoader classLoader){
+    public static Set<Class<?>> getAllInterfacesForClassAsSet(Class<?> clazz, ClassLoader classLoader){
         Assert.notNull(clazz, "Class must not be null");
         if (clazz.isInterface() && isVisible(clazz, classLoader)) {
             return Collections.<Class<?>>singleton(clazz);
@@ -1190,7 +1188,7 @@ public abstract class ClassUtils{
      * @return the merged interface as Class
      * @see Proxy#getProxyClass
      */
-    public static Class<?> createCompositeInterface(Class<?>[] interfaces, @Nullable ClassLoader classLoader){
+    public static Class<?> createCompositeInterface(Class<?>[] interfaces, ClassLoader classLoader){
         Assert.notEmpty(interfaces, "Interfaces must not be empty");
         return Proxy.getProxyClass(classLoader, interfaces);
     }
@@ -1205,8 +1203,8 @@ public abstract class ClassUtils{
      * given classes is {@code null}, the other class will be returned.
      * @since 3.2.6
      */
-    @Nullable
-    public static Class<?> determineCommonAncestor(@Nullable Class<?> clazz1, @Nullable Class<?> clazz2){
+
+    public static Class<?> determineCommonAncestor(Class<?> clazz1, Class<?> clazz2){
         if (clazz1 == null) {
             return clazz2;
         }
@@ -1237,7 +1235,7 @@ public abstract class ClassUtils{
      * @param classLoader the ClassLoader to check against (may be {@code null},
      *                    in which case this method will always return {@code true})
      */
-    public static boolean isVisible(Class<?> clazz, @Nullable ClassLoader classLoader){
+    public static boolean isVisible(Class<?> clazz, ClassLoader classLoader){
         if (classLoader == null) {
             return true;
         }
@@ -1268,7 +1266,7 @@ public abstract class ClassUtils{
      * @param clazz the class to check
      * @see #isCglibProxyClassName(String)
      */
-    public static boolean isCglibProxyClass(@Nullable Class<?> clazz){
+    public static boolean isCglibProxyClass(Class<?> clazz){
         return (clazz != null && isCglibProxyClassName(clazz.getName()));
     }
 
@@ -1277,7 +1275,7 @@ public abstract class ClassUtils{
      *
      * @param className the class name to check
      */
-    public static boolean isCglibProxyClassName(@Nullable String className){
+    public static boolean isCglibProxyClassName(String className){
         return (className != null && className.contains(CGLIB_CLASS_SEPARATOR));
     }
 

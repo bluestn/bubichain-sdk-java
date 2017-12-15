@@ -31,8 +31,6 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -47,7 +45,8 @@ public class BlockChainAdapter{
     private final long check_interval = 15 * 1000;
     private final int OVERLAY_PING = 1;
 
-    private class BlockChainManager extends Thread{
+    private class BlockChainManager implements Runnable{
+        private Thread blockchain_manager_thhead;
         private BlockChain block_chain_;
         private LinkedBlockingQueue<WsMessage> send_queue_;
         private boolean is_exit = true;
@@ -63,7 +62,8 @@ public class BlockChainAdapter{
             draft_ = new Draft_17();
             uri_ = URI.create(uri_address);
             send_queue_ = new LinkedBlockingQueue<>();
-            start();
+            blockchain_manager_thhead = new Thread(this);
+            blockchain_manager_thhead.start();
         }
 
         // start thread
@@ -100,20 +100,24 @@ public class BlockChainAdapter{
         public void Stop(){
             try {
                 is_exit = true;
-                join();
-                if (is_connected_) {
-                    block_chain_.close();
-                }
+                block_chain_.close();
             } catch (Exception e) {
                 logger_.error("join failed, " + e.getMessage());
             }
+        }
 
+        public void Join(){
+            try {
+                blockchain_manager_thhead.join();
+            } catch (InterruptedException e) {
+                logger_.error("BlockChainManager join error, " + e.getMessage());
+            }
         }
 
         private class BlockChain extends WebSocketClient{
 
             private SendMessageThread send_message_thread_ = new SendMessageThread("Send Thread");
-            private Timer timer_ = new Timer();
+            private HeartbeatThread heartbeat_thread_ = new HeartbeatThread("Heartbeat");
 
             public BlockChain(Draft d, URI uri){
                 super(uri, d);
@@ -130,7 +134,6 @@ public class BlockChainAdapter{
                         OnResponsePing(msg, length);
                     }
                 });
-                OnTimer();
             }
 
             @Override
@@ -148,7 +151,8 @@ public class BlockChainAdapter{
             @Override
             public void onClose(int code, String reason, boolean remote){
                 is_connected_ = false;
-                timer_.cancel();
+                heartbeat_thread_.Stop();
+                heartbeat_thread_.Join();
                 send_message_thread_.Stop();
                 send_message_thread_.Join();
                 logger_.error("Closed: " + index_ + ", code:" + code + ", reason:" + reason);
@@ -204,8 +208,6 @@ public class BlockChainAdapter{
 
                     SendMessage(blockchain_managers_.get(index_), Overlay.OVERLAY_MESSAGE_TYPE.OVERLAY_MSGTYPE_PING_VALUE, false,
                             sequence_, pong.build().toByteArray());
-                    logger_.info("OnRequestPing: Send ping to" + conn.getRemoteSocketAddress().getHostName()
-                            + ":" + conn.getRemoteSocketAddress().getPort());
                 } catch (InvalidProtocolBufferException e) {
                     logger_.error("OnRequestPing: parse ping data failed" + " (" + conn.getRemoteSocketAddress().getHostName()
                             + ":" + conn.getRemoteSocketAddress().getPort() + ")");
@@ -217,7 +219,7 @@ public class BlockChainAdapter{
                 try {
                     Pong.parseFrom(msg);
                     heartbeat_time_ = System.currentTimeMillis();
-                    logger_.info("OnRequestPing: Recv pong from " + conn.getRemoteSocketAddress().getHostName()
+                    logger_.debug("OnRequestPing: Recv pong from " + conn.getRemoteSocketAddress().getHostName()
                             + ":" + conn.getRemoteSocketAddress().getPort());
                 } catch (InvalidProtocolBufferException e) {
                     logger_.error("OnResponsePing: parse pong data failed" + " (" + conn.getRemoteSocketAddress().getHostName()
@@ -225,11 +227,25 @@ public class BlockChainAdapter{
                 }
             }
 
-            private void OnTimer(){
-                timer_.schedule(new TimerTask(){
+            private class HeartbeatThread implements Runnable{
+                private boolean heartbeat_enabled_ = true;
+                private Thread heartbeat_message_thread_;
 
-                    @Override
-                    public void run(){
+                HeartbeatThread(String thread_name){
+                    heartbeat_enabled_ = true;
+                    heartbeat_message_thread_ = new Thread(this);
+                    heartbeat_message_thread_.setName(thread_name);
+                    heartbeat_message_thread_.start();
+                }
+
+                @Override
+                public void run(){
+                    while (heartbeat_enabled_) {
+                        try {
+                            Thread.sleep(check_interval);
+                        } catch (Exception ex) {
+                            logger_.error("HeartbeatThread sleep failed, " + ex.getMessage());
+                        }
                         if (is_connected_) {
                             // send ping
                             WebSocket conn = getConnection();
@@ -238,6 +254,8 @@ public class BlockChainAdapter{
                             ping.setNonce(System.currentTimeMillis() * 1000);
                             SendMessage(blockchain_managers_.get(index_), Overlay.OVERLAY_MESSAGE_TYPE.OVERLAY_MSGTYPE_PING_VALUE,
                                     true, sequence_++, ping.build().toByteArray());
+                            logger_.debug("OnRequestPing: Send ping to" + conn.getRemoteSocketAddress().getHostName()
+                                    + ":" + conn.getRemoteSocketAddress().getPort());
 
                             // check timeout
                             long current_time = System.currentTimeMillis();
@@ -248,7 +266,19 @@ public class BlockChainAdapter{
                             }
                         }
                     }
-                }, 2000, check_interval);
+                }
+
+                void Stop(){
+                    heartbeat_enabled_ = false;
+                }
+
+                void Join(){
+                    try {
+                        heartbeat_message_thread_.join();
+                    } catch (InterruptedException e) {
+                        logger_.error("HeartbeatThread join error, " + e.getMessage());
+                    }
+                }
             }
 
             private class SendMessageThread implements Runnable{
@@ -279,12 +309,12 @@ public class BlockChainAdapter{
 
                             send(send_message.toByteArray());
                         } catch (Exception e) {
-                            logger_.error("send failed, " + e.getMessage());
+                            logger_.error("HeartbeatThread send failed, " + e.getMessage());
                             send_queue_.add(send_message);
                             try {
                                 Thread.sleep(3000);
                             } catch (Exception ex) {
-                                logger_.error("sleep failed, " + ex.getMessage());
+                                logger_.error("HeartbeatThread sleep failed, " + ex.getMessage());
                             }
                         }
                     }
@@ -328,6 +358,7 @@ public class BlockChainAdapter{
     public void Stop(){
         for (int i = 0; i < blockchain_managers_.size(); i++) {
             blockchain_managers_.get(i).Stop();
+            blockchain_managers_.get(i).Join();
         }
     }
 

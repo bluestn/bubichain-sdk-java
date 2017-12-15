@@ -4,7 +4,7 @@ package cn.bubi.sdk.core.event.message;
  * @author xiezhengchao@bubi.cn
  * @since 17/10/26 下午4:15.
  */
-public class LedgerSeqEventMessage{
+public class LedgerSeqEventMessage implements EventMessage{
 
     private String host;// 节点host
 

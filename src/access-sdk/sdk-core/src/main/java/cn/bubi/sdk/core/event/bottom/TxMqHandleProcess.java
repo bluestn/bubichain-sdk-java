@@ -2,8 +2,7 @@ package cn.bubi.sdk.core.event.bottom;
 
 import cn.bubi.sdk.core.event.EventBusService;
 import cn.bubi.sdk.core.event.message.TransactionExecutedEventMessage;
-import cn.bubi.sdk.core.event.source.TransactionNotifyEventSource;
-import cn.bubi.sdk.core.utils.GsonUtil;
+import cn.bubi.sdk.core.event.source.EventSourceEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,13 +16,14 @@ public class TxMqHandleProcess{
     private static Logger logger = LoggerFactory.getLogger(TxMqHandleProcess.class);
 
     private LimitQueue<String> successQueue = new LimitQueue<>(300);
-    private LimitQueue<String> failQueue = new LimitQueue<>(300);
     private final Object lock = new Object();
 
     private TxFailManager txFailManager;
+    private EventBusService eventBusService;
 
-    public TxMqHandleProcess(TxFailManager txFailManager){
+    public TxMqHandleProcess(TxFailManager txFailManager, EventBusService eventBusService){
         this.txFailManager = txFailManager;
+        this.eventBusService = eventBusService;
     }
 
     void process(TransactionExecutedEventMessage executedEventMessage){
@@ -35,20 +35,12 @@ public class TxMqHandleProcess{
 
             // 成功队列存在，则直接返回
             if (successQueue.exist(txHash)) {
-                logger.debug("successQueue exist txHash:" + txHash + ",ignore.");
+                logger.debug("successQueue exist txHash : " + txHash + " , ignore.");
                 return;
             }
 
             if (!executedEventMessage.getSuccess()) {
-                // 失败，入队列，交给后台线程去检查
-                if (failQueue.exist(txHash)) {
-                    logger.debug("failQueue exist txHash:" + txHash + ",ignore.");
-                    return;
-                }
-                logger.debug("failQueue offer txHash:" + txHash);
-                failQueue.offer(txHash);
-
-                txFailManager.addFailEventHash(txHash);
+                txFailManager.notifyFailEvent(executedEventMessage);
                 return;
             }
 
@@ -56,7 +48,7 @@ public class TxMqHandleProcess{
             successQueue.offer(txHash);
         }
 
-        EventBusService.publishEvent(TransactionNotifyEventSource.CODE, GsonUtil.toJson(executedEventMessage));
+        eventBusService.publishEvent(EventSourceEnum.TRANSACTION_NOTIFY.getEventSource(), executedEventMessage);
     }
 
 

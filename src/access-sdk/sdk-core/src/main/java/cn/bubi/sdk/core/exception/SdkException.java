@@ -65,4 +65,11 @@ public class SdkException extends Exception{
         this.errorMessage = errorMessage;
     }
 
+    @Override
+    public String toString(){
+        return "SdkException{" +
+                "errorCode=" + errorCode +
+                ", errorMessage='" + errorMessage + '\'' +
+                "} " + super.toString();
+    }
 }

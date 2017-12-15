@@ -1,15 +1,15 @@
 package cn.bubi.sdk.core.event.bottom;
 
+import cn.bubi.access.utils.spring.StringUtils;
 import cn.bubi.blockchain.adapter.BlockChainAdapter;
 import cn.bubi.blockchain.adapter3.Chain;
 import cn.bubi.blockchain.adapter3.Overlay;
 import cn.bubi.sdk.core.event.EventBusService;
 import cn.bubi.sdk.core.event.message.LedgerSeqEventMessage;
 import cn.bubi.sdk.core.event.message.TransactionExecutedEventMessage;
-import cn.bubi.sdk.core.event.source.LedgerSeqIncreaseEventSource;
+import cn.bubi.sdk.core.event.source.EventSourceEnum;
 import cn.bubi.sdk.core.exception.SdkError;
 import cn.bubi.sdk.core.exception.SdkException;
-import cn.bubi.sdk.core.utils.GsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,15 +25,18 @@ public class BlockchainMqHandler{
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockchainMqHandler.class);
     private static final Pattern URI_PATTERN = Pattern.compile("(ws://)(.*)(:[\\d+])");
 
+    private BlockChainAdapter mQBlockChainExecute;
     private TxMqHandleProcess mqHandleProcess;
+    private EventBusService eventBusService;
     private String eventUri;
     private String host;
 
 
-    public BlockchainMqHandler(String eventUri, TxMqHandleProcess mqHandleProcess) throws SdkException{
+    public BlockchainMqHandler(String eventUri, TxMqHandleProcess mqHandleProcess, EventBusService eventBusService) throws SdkException{
         this.eventUri = eventUri;
         this.host = getHostByUri(eventUri);
         this.mqHandleProcess = mqHandleProcess;
+        this.eventBusService = eventBusService;
     }
 
     private static String getHostByUri(String eventUri) throws SdkException{
@@ -65,6 +68,13 @@ public class BlockchainMqHandler{
         Overlay.ChainHello.Builder chain_hello = Overlay.ChainHello.newBuilder();
         chain_hello.setTimestamp(new Date().getTime());
         mQBlockChainExecute.Send(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, chain_hello.build().toByteArray());
+        this.mQBlockChainExecute = mQBlockChainExecute;
+    }
+
+    public void destroy(){
+        if (mQBlockChainExecute != null) {
+            mQBlockChainExecute.Stop();
+        }
     }
 
 
@@ -95,6 +105,12 @@ public class BlockchainMqHandler{
                 default:
                     break;
             }
+
+            if (StringUtils.isEmpty(message.getSponsorAddress())) {
+                LOGGER.error("received empty source address. TransactionExecutedEventMessage : " + message);
+                return;
+            }
+
             if (message.getSuccess() != null) {
                 // 交给后置处理器处理
                 mqHandleProcess.process(message);
@@ -116,7 +132,7 @@ public class BlockchainMqHandler{
             seqEventMessage.setHost(host);
             seqEventMessage.setSeq(ledger_header.getSeq());
 
-            EventBusService.publishEvent(LedgerSeqIncreaseEventSource.CODE, GsonUtil.toJson(seqEventMessage));
+            eventBusService.publishEvent(EventSourceEnum.LEDGER_SEQ_INCREASE.getEventSource(), seqEventMessage);
 
         } catch (Exception e) {
             LOGGER.error("接收seq增加异常", e);

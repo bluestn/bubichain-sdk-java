@@ -16,9 +16,6 @@
 
 package cn.bubi.access.utils.spring;
 
-import com.sun.istack.internal.Nullable;
-import org.apache.commons.lang.ClassUtils;
-
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -211,7 +208,7 @@ public abstract class TypeUtils{
         return true;
     }
 
-    public static boolean isAssignableBound(@Nullable Type lhsType, @Nullable Type rhsType){
+    public static boolean isAssignableBound(Type lhsType, Type rhsType){
         if (rhsType == null) {
             return true;
         }

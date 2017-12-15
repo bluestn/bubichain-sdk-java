@@ -3,16 +3,18 @@ package cn.bubi.access.starter;
 import cn.bubi.sdk.core.balance.model.RpcServiceConfig;
 import cn.bubi.sdk.core.exception.SdkError;
 import cn.bubi.sdk.core.exception.SdkException;
+import cn.bubi.sdk.core.seq.redis.RedisConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * 区块链的属性；
+ * starter配置信息
  */
 @ConfigurationProperties(prefix = "blockchain")
 public class BlockchainProperties{
@@ -25,6 +27,18 @@ public class BlockchainProperties{
 
     private Server event = new Server();
 
+    private SponsorAccountPoolConfig accountPool = new SponsorAccountPoolConfig();
+
+    private RedisSeqConfig redisSeq = new RedisSeqConfig();
+
+
+    public RedisSeqConfig getRedisSeq(){
+        return redisSeq;
+    }
+
+    public void setRedisSeq(RedisSeqConfig redisSeq){
+        this.redisSeq = redisSeq;
+    }
 
     public NodeProperties getNode(){
         return node;
@@ -42,6 +56,117 @@ public class BlockchainProperties{
         this.event = event;
     }
 
+    public SponsorAccountPoolConfig getAccountPool(){
+        return accountPool;
+    }
+
+    public void setAccountPool(SponsorAccountPoolConfig accountPool){
+        this.accountPool = accountPool;
+    }
+
+    /**
+     * 对redis管理seq的配置
+     */
+    public static class RedisSeqConfig{
+
+        // 默认关闭
+        private boolean enable = false;
+
+        private List<RedisConfig> redis = new ArrayList<>();
+
+        public boolean isEnable(){
+            return enable;
+        }
+
+        public void setEnable(boolean enable){
+            this.enable = enable;
+        }
+
+        public List<RedisConfig> getRedis(){
+            return redis;
+        }
+
+        public void setRedis(List<RedisConfig> redis){
+            this.redis = redis;
+        }
+    }
+
+    /**
+     * 账户池配置
+     */
+    public static class SponsorAccountPoolConfig{
+
+        private boolean enable = true;
+
+        @NotNull
+        private String address;
+
+        @NotNull
+        private String publicKey;
+
+        @NotNull
+        private String privateKey;
+
+        private int poolSize = 200;
+        private String filePath;
+        private String sponsorAccountMark;
+
+        public boolean isEnable(){
+            return enable;
+        }
+
+        public void setEnable(boolean enable){
+            this.enable = enable;
+        }
+
+        public String getAddress(){
+            return address;
+        }
+
+        public void setAddress(String address){
+            this.address = address;
+        }
+
+        public String getPublicKey(){
+            return publicKey;
+        }
+
+        public void setPublicKey(String publicKey){
+            this.publicKey = publicKey;
+        }
+
+        public String getPrivateKey(){
+            return privateKey;
+        }
+
+        public void setPrivateKey(String privateKey){
+            this.privateKey = privateKey;
+        }
+
+        public int getPoolSize(){
+            return poolSize;
+        }
+
+        public void setPoolSize(int poolSize){
+            this.poolSize = poolSize;
+        }
+
+        public String getFilePath(){
+            return filePath;
+        }
+
+        public void setFilePath(String filePath){
+            this.filePath = filePath;
+        }
+
+        public String getSponsorAccountMark(){
+            return sponsorAccountMark;
+        }
+
+        public void setSponsorAccountMark(String sponsorAccountMark){
+            this.sponsorAccountMark = sponsorAccountMark;
+        }
+    }
 
     /**
      * 区块链节点的属性；
@@ -71,7 +196,6 @@ public class BlockchainProperties{
                         })
                         .filter(Objects:: nonNull).collect(Collectors.toList());
             } catch (Exception e) {
-                e.printStackTrace();
                 throw new SdkException(SdkError.PARSE_IP_ERROR);
             }
         }
@@ -107,7 +231,6 @@ public class BlockchainProperties{
             try {
                 return Stream.of(uri.split(IP_SEPARATOR)).collect(Collectors.toList());
             } catch (Exception e) {
-                e.printStackTrace();
                 throw new SdkException(SdkError.PARSE_URI_ERROR);
             }
         }
