@@ -53,83 +53,36 @@ SDK本身无任何依赖框架，使用时载入配置即可运行，考虑到�
 ### 1简单的config配置使用
 ``` java
 
-public class Config{
+public void config() throws SdkException{
+    String address = "a0012ea403227b861289ed5fcedd30e51e85ef7397ebc6";
+    String publicKey = "b001e9fd31a0fc25af3123f67575cdd0c6b8c2192eead9f58728a3fb46accdc0faa67f";
+    String privateKey = "c0018335e8c3e34cceaa24027207792318bc388bea443b53d5ba9e00e5adb6739bb61b";
 
-    private BcOperationService operationService;
-    private BcQueryService queryService;
+    String eventUtis = "ws://192.168.10.100:7053,ws://192.168.10.110:7053,ws://192.168.10.120:7053,ws://192.168.10.130:7053";
+    String ips = "192.168.10.100:29333,192.168.10.110:29333,192.168.10.120:29333,192.168.10.130:29333";
 
-    static final String CREATOR_ADDRESS = "a0012ea403227b861289ed5fcedd30e51e85ef7397ebc6";
-    static final String CREATOR_PUBLIC_KEY = "b001e9fd31a0fc25af3123f67575cdd0c6b8c2192eead9f58728a3fb46accdc0faa67f";
-    static final String CREATOR_PRIVATE_KEY = "c0018335e8c3e34cceaa24027207792318bc388bea443b53d5ba9e00e5adb6739bb61b";
+    SDKConfig config = new SDKConfig();
+    SDKProperties sdkProperties = new SDKProperties();
+    sdkProperties.setEventUtis(eventUtis);
+    sdkProperties.setIps(ips);
+    sdkProperties.setAccountPoolEnable(true);
+    sdkProperties.setAddress(address);
+    sdkProperties.setPublicKey(publicKey);
+    sdkProperties.setPrivateKey(privateKey);
+    sdkProperties.setSize(12);
+    sdkProperties.setMark("test-demo-config");
+    sdkProperties.setRedisSeqManagerEnable(true);
+    sdkProperties.setHost("192.168.10.73");
+    sdkProperties.setPort(10379);
+    sdkProperties.setPassword("bubi888");
+    config.configSdk(sdkProperties);
 
-    public void configSdk() throws SdkException{
+    // 完成配置获得spi
+    config.getOperationService();
+    config.getQueryService();
 
-
-        String eventUtis = "ws://192.168.10.100:7053,ws://192.168.10.110:7053,ws://192.168.10.120:7053,ws://192.168.10.130:7053";
-        String ips = "192.168.10.100:29333,192.168.10.110:29333,192.168.10.120:29333,192.168.10.130:29333";
-
-        // 解析原生配置参数
-        List<RpcServiceConfig> rpcServiceConfigList = Stream.of(ips.split(","))
-                .map(ip -> {
-                    if (!ip.contains(":") || ip.length() < 5) {
-                        return null;
-                    }
-                    return new RpcServiceConfig(ip.split(":")[0], Integer.valueOf(ip.split(":")[1]));
-                })
-                .filter(Objects:: nonNull).collect(Collectors.toList());
-
-        // 1 配置nodeManager
-        NodeManager nodeManager = new NodeManager(rpcServiceConfigList);
-
-        // 2 配置rpcService
-        RpcService rpcService = new RpcServiceLoadBalancer(rpcServiceConfigList, nodeManager);
-
-        // 3 配置mq以及配套设施 可以配置多个节点监听，收到任意监听结果均可处理
-        TxFailManager txFailManager = new TxFailManager(rpcService);
-        txFailManager.init();
-
-        TxMqHandleProcess mqHandleProcess = new TxMqHandleProcess(txFailManager);
-        for (String uri : eventUtis.split(",")) {
-            new BlockchainMqHandler(uri, mqHandleProcess).init();
-        }
-
-        // 4 配置seqManager
-        SequenceManager sequenceManager = new SeqNumberManager(rpcService);
-        sequenceManager.init();
-
-        // 5 配置transactionSyncManager
-        TransactionSyncManager transactionSyncManager = new TransactionSyncManager();
-        transactionSyncManager.init();
-
-        // 初始化账户池
-        SponsorAccountPoolManager sponsorAccountPoolManager = new SponsorAccountPoolManager(new DefaultSponsorAccountFactory());
-
-        // 6 初始化同步通知器与区块增长通知器
-        EventHandler notifyEventHandler = new TransactionNotifyEventHandler(sequenceManager, transactionSyncManager, sponsorAccountPoolManager);
-        EventHandler seqIncreaseEventHandler = new LedgerSeqIncreaseEventHandler(txFailManager, nodeManager);
-
-        // 7 配置事件总线
-        EventBusService.addEventHandler(notifyEventHandler);
-        EventBusService.addEventHandler(seqIncreaseEventHandler);
-
-        // 8 初始化spi
-        BcOperationService operationService = new BcOperationServiceImpl(sequenceManager, rpcService, transactionSyncManager, nodeManager, txFailManager, sponsorAccountPoolManager);
-        sponsorAccountPoolManager.initPool(operationService, CREATOR_ADDRESS, CREATOR_PUBLIC_KEY, CREATOR_PRIVATE_KEY, 50, "classpath:customPoolFile.txt", "test-mark");
-
-        BcQueryService queryService = new BcQueryServiceImpl(rpcService);
-
-        this.operationService = operationService;
-        this.queryService = queryService;
-    }
-
-    BcOperationService getOperationService(){
-        return operationService;
-    }
-
-    BcQueryService getQueryService(){
-        return queryService;
-    }
 }
+
 
 ```
 
@@ -141,6 +94,8 @@ public class Config{
     <version>${access-sdk.version}</version>
 </dependency>
 ```
+
+> 如果想自定义配置参考SDKConfig类的配置方法，可以自行配置
 
 ### 2基于Spring Boot的starter方式自动配置
 
