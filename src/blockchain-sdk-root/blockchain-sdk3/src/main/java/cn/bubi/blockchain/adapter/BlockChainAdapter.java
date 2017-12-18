@@ -134,16 +134,16 @@ public class BlockChainAdapter {
 			
 			@Override
 			public void onError( Exception ex ) {
-				logger_.info( "Error: " + ex.getMessage());
+				logger_.debug( "Error: " + ex.getMessage());
 			}
 
 			@Override
 			public void onOpen( ServerHandshake handshake ) {
 				is_connected_ = true;
 				heartbeat_time_ = System.currentTimeMillis();
-				logger_.info("open successful");
+				logger_.debug("open successful");
 			}
-
+			
 			@Override
 			public void onClose( int code, String reason, boolean remote ) {
 				is_connected_ = false;
@@ -219,7 +219,7 @@ public class BlockChainAdapter {
 				try {
 					Pong.parseFrom(msg);
 					heartbeat_time_ = System.currentTimeMillis();
-					System.out.println("OnRequestPing: Recv pong from " + conn.getRemoteSocketAddress().getHostName() 
+					logger_.debug("OnRequestPing: Recv pong from " + conn.getRemoteSocketAddress().getHostName() 
 							+ ":" + conn.getRemoteSocketAddress().getPort());
 				} catch (InvalidProtocolBufferException e) {
 					logger_.error("OnResponsePing: parse pong data failed" + " (" + conn.getRemoteSocketAddress().getHostName() 
@@ -252,7 +252,7 @@ public class BlockChainAdapter {
 							ping.setNonce(System.currentTimeMillis() * 1000);
 							SendMessage(blockchain_managers_.get(index_), Overlay.OVERLAY_MESSAGE_TYPE.OVERLAY_MSGTYPE_PING_VALUE, 
 									true, sequence_++, ping.build().toByteArray());
-							System.out.println("OnRequestPing: Send ping to" + conn.getRemoteSocketAddress().getHostName() 
+							logger_.debug("OnRequestPing: Send ping to" + conn.getRemoteSocketAddress().getHostName() 
 									+ ":" + conn.getRemoteSocketAddress().getPort());
 							
 							// check timeout
@@ -435,8 +435,8 @@ public class BlockChainAdapter {
 //			public void ChainMethod(long seq, byte[] msg, int length) {
 //				try {
 //					Message.ChainHello hello = Message.ChainHello.parseFrom(msg);
-//					System.out.println("==============================");
-//					System.out.println(msg);
+//					logger_.debug("==============================");
+//					logger_.debug(msg);
 //				} catch (InvalidProtocolBufferException e) {
 //					e.printStackTrace();
 //				}
@@ -456,7 +456,7 @@ public class BlockChainAdapter {
 //			Message.ChainHello.Builder chain_hello = Message.ChainHello.newBuilder();
 //			chain_hello.setTimestamp(System.currentTimeMillis());
 //			if (!chain_message_.Send(Message.ChainMessageType.CHAIN_HELLO.getNumber(), chain_hello.build().toByteArray())) {
-//				System.out.println("send hello failed");
+//				logger_.debug("send hello failed");
 //			}
 //			try {
 //				Thread.sleep(3000);
@@ -470,6 +470,6 @@ public class BlockChainAdapter {
 //	 }
 //	 
 //	 private static void OnChainTxStatus(byte[] msg, int length) {
-//		 System.out.println(msg); 
+//		 logger_.debug(msg); 
 //	 }
 }
