@@ -53,7 +53,7 @@ public class chain_test {
 		chaintest.Initialize();
 		System.out.println("*****************start chain_message successfully******************");
 		try {
-			Thread.sleep(100000);
+			Thread.sleep(10000000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -68,7 +68,7 @@ public class chain_test {
 		
 		logger_ = LoggerFactory.getLogger(BlockChainAdapter.class);
 		object_ = new Object();
-		chain_message_one_ = new BlockChainAdapter("ws://127.0.0.1:7053");
+		chain_message_one_ = new BlockChainAdapter("ws://192.168.5.68:7053");
 		chain_message_one_.AddChainResponseMethod(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
 			public void ChainMethod (byte[] msg, int length) {
 				OnChainHello(msg, length);
@@ -89,6 +89,11 @@ public class chain_test {
 				OnChainLedgerHeader(msg, length);
 			}
 		});
+		chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_CONTRACT_LOG_VALUE, new BlockChainAdapterProc() {
+			public void ChainMethod (byte[] msg, int length) {
+				OnContractLog(msg, length);
+			}
+		});
 		
 		Overlay.ChainHello.Builder chain_hello = Overlay.ChainHello.newBuilder();
 		chain_hello.setTimestamp(System.currentTimeMillis());
@@ -100,6 +105,16 @@ public class chain_test {
 		try {
 			Overlay.ChainStatus chain_status = Overlay.ChainStatus.parseFrom(msg);
 			System.out.println(chain_status);
+		} catch (Exception e) {
+			logger_.error(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	
+	private void OnContractLog(byte[] msg, int length) {
+		try {
+			Overlay.ContractLog contract_log = Overlay.ContractLog.parseFrom(msg);
+			System.out.println(contract_log);
 		} catch (Exception e) {
 			logger_.error(e.getMessage());
 			e.printStackTrace();
@@ -303,12 +318,12 @@ public class chain_test {
 				try {
 					Thread.sleep(5000);
 					
-					String url = "http://127.0.0.1:29333";
-					String privateKey = "c00177e3fc95822f5d4c653a35b712421978e2998fa44a3ea3c6e4b7fe98b496f87fee";
-					String publicKey = "b0019798ea08b3286e1dac0c52f98c93388c946ee606878d2a538aaf7623aac5c9f8e1";
-					String address = "a002d8345b89dc34a57574eb497635ff125a3799fe77b6";
-					
-					TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ECCSM2, null, null, null);
+//					String url = "http://127.0.0.1:29333";
+//					String privateKey = "c00177e3fc95822f5d4c653a35b712421978e2998fa44a3ea3c6e4b7fe98b496f87fee";
+//					String publicKey = "b0019798ea08b3286e1dac0c52f98c93388c946ee606878d2a538aaf7623aac5c9f8e1";
+//					String address = "a002d8345b89dc34a57574eb497635ff125a3799fe77b6";
+//					
+//					TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ECCSM2, null, null, null);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
