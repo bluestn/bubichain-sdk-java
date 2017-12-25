@@ -138,7 +138,7 @@ public class BlockChainAdapter{
 
             @Override
             public void onError(Exception ex){
-                logger_.info("Error: " + ex.getMessage());
+                logger_.error("Error: " + ex.getMessage());
             }
 
             @Override
@@ -209,7 +209,7 @@ public class BlockChainAdapter{
                     SendMessage(blockchain_managers_.get(index_), Overlay.OVERLAY_MESSAGE_TYPE.OVERLAY_MSGTYPE_PING_VALUE, false,
                             sequence_, pong.build().toByteArray());
                 } catch (InvalidProtocolBufferException e) {
-                    logger_.error("OnRequestPing: parse ping data failed" + " (" + conn.getRemoteSocketAddress().getHostName()
+                    logger_.error("OnRequestPing: parse ping data failed" + " (" + conn.getRemoteSocketAddress().GetHostString()
                             + ":" + conn.getRemoteSocketAddress().getPort() + ")");
                 }
             }
@@ -219,10 +219,10 @@ public class BlockChainAdapter{
                 try {
                     Pong.parseFrom(msg);
                     heartbeat_time_ = System.currentTimeMillis();
-                    logger_.debug("OnRequestPing: Recv pong from " + conn.getRemoteSocketAddress().getHostName()
+                    logger_.debug("OnRequestPing: Recv pong from " + conn.getRemoteSocketAddress().GetHostString()
                             + ":" + conn.getRemoteSocketAddress().getPort());
                 } catch (InvalidProtocolBufferException e) {
-                    logger_.error("OnResponsePing: parse pong data failed" + " (" + conn.getRemoteSocketAddress().getHostName()
+                    logger_.error("OnResponsePing: parse pong data failed" + " (" + conn.getRemoteSocketAddress().GetHostString()
                             + ":" + conn.getRemoteSocketAddress().getPort() + ")");
                 }
             }
@@ -254,13 +254,13 @@ public class BlockChainAdapter{
                             ping.setNonce(System.currentTimeMillis() * 1000);
                             SendMessage(blockchain_managers_.get(index_), Overlay.OVERLAY_MESSAGE_TYPE.OVERLAY_MSGTYPE_PING_VALUE,
                                     true, sequence_++, ping.build().toByteArray());
-                            logger_.debug("OnRequestPing: Send ping to" + conn.getRemoteSocketAddress().getHostName()
+                            logger_.debug("OnRequestPing: Send ping to" + conn.getRemoteSocketAddress().GetHostString()
                                     + ":" + conn.getRemoteSocketAddress().getPort());
 
                             // check timeout
                             long current_time = System.currentTimeMillis();
                             if (current_time - heartbeat_time_ > connection_timeout_) {
-                                logger_.error("connection time out" + " (" + conn.getRemoteSocketAddress().getHostName() +
+                                logger_.error("connection time out" + " (" + conn.getRemoteSocketAddress().GetHostString() +
                                         ":" + conn.getRemoteSocketAddress().getPort() + ")");
                                 close();
                             }
