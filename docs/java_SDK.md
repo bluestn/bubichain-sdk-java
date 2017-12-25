@@ -99,6 +99,26 @@ blockChainAdapter.AddChainMethod(Overlay.ChainMessageType.CHAIN_PEER_MESSAGE_VAL
 });
 ```
 
+#### 5.4 CHAIN_LEDGER_HEADER_VALUE消息
+该消息用于布比程序关闭区块时上传区块状态，需要用到LedgerHeader数据类型，仅用于布比3.0版，使用如下：
+```java
+chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_LEDGER_HEADER_VALUE, new BlockChainAdapterProc() {
+	public void ChainMethod (byte[] msg, int length) {
+    	//处理 CHAIN_LEDGER_HEADER_VALUE消息
+    	Chain.LedgerHeader ledger_header = Chain.LedgerHeader.parseFrom(msg);
+	}
+});
+```
+
+#### 5.4 CHAIN_CONTRACT_LOG_VALUE消息
+该消息用于布比程序在执行智能合约CallBackLog接口时，上传该日志信息，仅用于布比3.0版，使用如下：
+chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_CONTRACT_LOG_VALUE, new BlockChainAdapterProc() {
+	public void ChainMethod (byte[] msg, int length) {
+		//处理 CHAIN_CONTRACT_LOG_VALUE消息
+		Overlay.ContractLog contract_log = Overlay.ContractLog.parseFrom(msg);
+	}
+});
+
 ### 6. 发送消息
 blockChainAdapter.Send(信息类型， 消息内容);
 
