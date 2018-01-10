@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
+import java.security.spec.EllipticCurve;
 import java.util.Random;
 import cn.bubi.sm3.SM3Digest;
 
@@ -25,32 +26,15 @@ public class Sm2Key {
 
 	// nlen_ 有限域阶n的字节数
 	int nlen_;
-	static public byte[] fixedLen(BigInteger x, int len){
-		byte[] out = new byte[len];
-		byte[] tmp = x.toByteArray();
-		
-		if(tmp.length <= len){
-			System.arraycopy(tmp, 0, out, len - tmp.length, tmp.length);
-		}else{
-			System.arraycopy(tmp, tmp.length - len, out, 0, len);
-		}
-		return out;
-	}
+
 	// 根据已有私钥对象构建
 	public Sm2Key(byte[] skeybyte, ECParameterSpec spec) {
-		spec_ = spec;
-		BigInteger a = spec_.getCurve().getA();
-		ECFieldFp fd = (ECFieldFp) spec_.getCurve().getField();
-		BigInteger p = fd.getP();
-
 		byte[] buff = new byte[skeybyte.length + 1];
 		buff[0] = 0;
 		System.arraycopy(skeybyte, 0, buff, 1, skeybyte.length);
 		dA_ = new BigInteger(buff);
-
-		//System.out.println(dA_.toString(16));
-
-		pA_ = PointMul(dA_, spec_.getGenerator(), p, a);
+		spec_ = spec;
+		pA_ = PointMul(dA_, spec_.getGenerator(), spec_.getCurve());
 		byte[] tmp = ((ECFieldFp) (spec_.getCurve().getField())).getP().toByteArray();
 		if (tmp[0] == 0) {
 			nlen_ = tmp.length - 1;
@@ -73,10 +57,6 @@ public class Sm2Key {
 		// 随机私钥
 		java.util.Random random = new java.util.Random();
 		ECFieldFp fp = (ECFieldFp) spec_.getCurve().getField();
-		BigInteger a = spec_.getCurve().getA();
-
-		BigInteger p = fp.getP();
-
 		int bitlen = fp.getP().bitLength();
 		do {
 
@@ -85,7 +65,7 @@ public class Sm2Key {
 				continue;
 			}
 
-			pA_ = PointMul(dA_, spec_.getGenerator(), p, a);
+			pA_ = PointMul(dA_, spec_.getGenerator(), spec_.getCurve());
 
 			if (pA_.getAffineX().bitLength() <= nlen_ - 8 || pA_.getAffineY().bitLength() <= nlen_ - 8) {
 				continue;
@@ -100,14 +80,25 @@ public class Sm2Key {
 		BigInteger x = pA_.getAffineX();
 		BigInteger y = pA_.getAffineY();
 
-		byte[] xbyte = fixedLen(x, nlen_);
-		byte[] ybyte = fixedLen(y, nlen_);
+		byte[] xbyte = x.toByteArray();
+		byte[] ybyte = y.toByteArray();
 
 		byte[] out = new byte[2 * nlen_ + 1];
 		byte PC = 4;
+
 		out[0] = PC;
-		System.arraycopy(xbyte, 0, out, 1, nlen_);
-		System.arraycopy(ybyte, 0, out, 1 + nlen_, nlen_);
+		if (xbyte[0] == 0) {
+			System.arraycopy(xbyte, 1, out, 2 + nlen_ - xbyte.length, xbyte.length - 1);
+		} else {
+			System.arraycopy(xbyte, 0, out, 1 + nlen_ - xbyte.length, xbyte.length);
+		}
+
+		if (ybyte[0] == 0) {
+			System.arraycopy(ybyte, 1, out, 2 + 2 * nlen_ - ybyte.length, ybyte.length - 1);
+		} else {
+			System.arraycopy(ybyte, 0, out, 1 + 2 * nlen_ - ybyte.length, ybyte.length);
+		}
+
 		return out;
 	}
 
@@ -142,41 +133,37 @@ public class Sm2Key {
 
 	public byte[] GetSkeyByte() {
 
-		byte[] da = fixedLen(dA_,nlen_); 
-		return da;
+		byte[] da = dA_.toByteArray();
+		byte[] out = new byte[nlen_];
+		if (da[0] == 0) {
+			System.arraycopy(da, 1, out, 1 + nlen_ - da.length, da.length - 1);
+		} else {
+			System.arraycopy(da, 0, out, nlen_ - da.length, da.length);
+		}
+		return out;
 	}
 
 	// 签名函数
 	public byte[] Sign(byte[] id, byte[] msg) {
-		BigInteger a = spec_.getCurve().getA();
-		ECFieldFp fd = (ECFieldFp) spec_.getCurve().getField();
-		BigInteger p = fd.getP();
-
 		// 得到M^ = ZA||M
-		ECPoint pA = PointMul(dA_, spec_.getGenerator(), p, a);
+		ECPoint pA = PointMul(dA_, spec_.getGenerator(), spec_.getCurve());
 
 		byte[] ZA = GetZA(spec_, pA, id);
-		//System.out.println("ZA=" + bytesToHex(ZA));
+
+		// System.out.println("ZA=" + bytesToHex(ZA));
 
 		byte[] M = new byte[msg.length + ZA.length];
 		System.arraycopy(ZA, 0, M, 0, ZA.length);
 		System.arraycopy(msg, 0, M, ZA.length, msg.length);
 
 		// 第二步 e=Hv(M^)
-		byte[] ebytes = new byte[nlen_ + 1];
-		ebytes[0] = 0;
-		byte[] h = SM3Digest.Hash(M);
-		System.arraycopy(h, 0, ebytes, 1, h.length);
+		byte[] ebytes = SM3Digest.Hash(M);
 
 		BigInteger e = new BigInteger(bytesToHex(ebytes), 16);
-		
-		//System.out.println("e=" + bytesToHex(h));
-		
 		BigInteger n = spec_.getOrder();
 
 		while (true) {
 			// 第三步 产生随机数k [1,n-1]
-
 			Random random = new java.util.Random();
 			BigInteger K = new BigInteger(n.bitLength() - 1, random);
 
@@ -184,21 +171,18 @@ public class Sm2Key {
 				continue;
 			}
 
-			// BigInteger K = new
-			// BigInteger("6CB28D99385C175C94F94E934817663FC176D925DD72B727260DBAAE1FB2F96F",
-			// 16);
 			// 第四步 计算pt1(x1,y1) = [K]G这个点
 			ECPoint G = spec_.getGenerator();
-			ECPoint pt1 = PointMul(K, G, p, a);
+			ECPoint pt1 = PointMul(K, G, spec_.getCurve());
 			BigInteger x1 = pt1.getAffineX();
 
 			// 第五步 计算 r = (e + x1) mod n
 			BigInteger r = x1.add(e).mod(n);
-			// r = r.add(n).mod(n);
+			r = r.add(n).mod(n);
 
-			
+			// System.out.println("r=" + r.toString(16));
 			// 确保r!=0 且 r+k!=n 也就是 (r+k) != 0 mod n
-			if (r.add(K).mod(n).equals(BigInteger.ZERO)) {
+			if (r.add(K).mod(n).compareTo(BigInteger.ZERO) == 0) {
 				continue;
 			}
 
@@ -206,28 +190,39 @@ public class Sm2Key {
 			BigInteger tmp1 = dA_.add(BigInteger.ONE).modInverse(n);
 			BigInteger tmp2 = K.subtract(r.multiply(dA_).mod(n)).mod(n);
 			BigInteger s = tmp1.multiply(tmp2).mod(n);
-
-			if (s.equals(BigInteger.ZERO)) {
+			s = s.add(n).mod(n);
+			if (s.compareTo(BigInteger.ZERO) == 0) {
 				continue;
 			}
 
+			ECFieldFp fp = (ECFieldFp) spec_.getCurve().getField();
+			byte[] pb = fp.getP().toByteArray();
+			int len = pb[0] == 0 ? pb.length - 1 : pb.length;
 
-			byte[] rb = fixedLen(r, nlen_) ;
-			byte[] sb = fixedLen(s, nlen_); 
-			byte[] sig = new byte[2 * nlen_];
+			byte[] rb = r.toByteArray();
+			byte[] sb = s.toByteArray();
+			byte[] sig = new byte[2 * len];
 
-			System.arraycopy(rb, 0, sig, 0, nlen_);
-			System.arraycopy(sb, 0, sig, nlen_, nlen_);
+			if (rb[0] == 0) {
+				System.arraycopy(rb, 1, sig, len - rb.length + 1, rb.length - 1);
+			} else {
+				System.arraycopy(rb, 0, sig, len - rb.length, rb.length);
+			}
+
+			if (sb[0] == 0) {
+				System.arraycopy(sb, 1, sig, 2 * len - sb.length + 1, sb.length - 1);
+			} else {
+				System.arraycopy(sb, 0, sig, 2 * len - sb.length, sb.length);
+			}
+
 			return sig;
 		}
 
 	}
 
 	// 签名验证
-	public static boolean Verify(ECParameterSpec spec, byte[] id, byte[] msg, ECPoint pkey, Sm2Signature sig) {
-		BigInteger a = spec.getCurve().getA();
-		ECFieldFp fd = (ECFieldFp) spec.getCurve().getField();
-		BigInteger p = fd.getP();
+	private static boolean Verify(ECParameterSpec spec, byte[] id, byte[] msg, ECPoint pkey, Sm2Signature sig) {
+
 		do {
 			// 第一步 r在[1,n-1]范围
 			BigInteger order = spec.getOrder();
@@ -244,7 +239,7 @@ public class Sm2Key {
 			byte[] ZA = GetZA(spec, pkey, id);
 			byte[] M = new byte[ZA.length + msg.length];
 			System.arraycopy(ZA, 0, M, 0, ZA.length);
-			System.arraycopy(msg, 0, M, ZA.length, msg.length);
+			System.arraycopy(msg, 0, M, 32, msg.length);
 
 			// 第四步 计算e=Hv(M^)
 			byte[] stre = SM3Digest.Hash(M);
@@ -258,13 +253,12 @@ public class Sm2Key {
 
 			// 第六步 计算(x1,y1) = [s]G + [t]PA
 			ECPoint G = spec.getGenerator();
-			ECPoint tmp1 = PointMul(sig.s, G, p, a);
-			ECPoint tmp2 = PointMul(t, pkey, p, a);
-			ECPoint tmPoint = PointAdd(tmp1, tmp2, p, a);
+			ECPoint tmp1 = PointMul(sig.s, G, spec.getCurve());
+			ECPoint tmp2 = PointMul(t, pkey, spec.getCurve());
+			ECPoint tmPoint = PointAdd(tmp1, tmp2, spec.getCurve());
 
 			// 第七步 R=(e' + x1') 验证R==r'?
 			BigInteger R = e.add(tmPoint.getAffineX()).mod(order);
-
 			if (R.compareTo(sig.r) != 0) {
 				break;
 			}
@@ -275,9 +269,10 @@ public class Sm2Key {
 		return false;
 	}
 
-	public static boolean Verify(byte[] msg, byte[] pkey, byte[] strsig, byte[] id, ECParameterSpec spec) {
-
-		int len = strsig.length / 2;
+	protected static boolean Verify(byte[] msg, byte[] pkey, byte[] strsig, byte[] id, ECParameterSpec spec) {
+		ECFieldFp fp = (ECFieldFp) spec.getCurve().getField();
+		byte[] pb = fp.getP().toByteArray();
+		int len = pb[0] == 0 ? pb.length - 1 : pb.length;
 		byte[] r = new byte[len + 1];
 		byte[] s = new byte[len + 1];
 		System.arraycopy(strsig, 0, r, 1, len);
@@ -302,14 +297,13 @@ public class Sm2Key {
 
 	// 计算ZA,椭圆曲线参数，公钥点，身份标识
 	private static byte[] GetZA(ECParameterSpec spec, ECPoint pA, byte[] id) {
-		int LENGTH = 32;
-		
+
 		byte[] za = new byte[256];
 		int etlen = id.length * 8;
 		// 拼接ENTLA
 		int pos = 0;
 		za[0] = (byte) (etlen >> 8);
-		za[1] = (byte) (etlen & 0xFF);
+		za[1] = (byte) (etlen & 0xFf);
 
 		pos += 2;
 		// 拼接用户ID
@@ -317,101 +311,101 @@ public class Sm2Key {
 		pos += id.length;
 
 		// 拼接a
-		byte[] a = fixedLen(spec.getCurve().getA(), LENGTH);
+		byte[] a = spec.getCurve().getA().toByteArray();
 		System.arraycopy(a, 0, za, pos, a.length);
 		pos += a.length;
 
 		// 拼接b
-		byte[] b = fixedLen(spec.getCurve().getB(), LENGTH);
+		byte[] b = spec.getCurve().getB().toByteArray();
 		System.arraycopy(b, 0, za, pos, b.length);
 		pos += b.length;
 
 		// 拼接xG
-		byte[] xG = fixedLen(spec.getGenerator().getAffineX(), LENGTH);
+		byte[] xG = spec.getGenerator().getAffineX().toByteArray();
 		System.arraycopy(xG, 0, za, pos, xG.length);
 		pos += xG.length;
-
+		// System.out.println("xG=" + bytesToHex(xG));
 
 		// 拼接yG
-		byte[] yG = fixedLen(spec.getGenerator().getAffineY(), LENGTH);
+		byte[] yG = spec.getGenerator().getAffineY().toByteArray();
 		System.arraycopy(yG, 0, za, pos, yG.length);
 		pos += yG.length;
+		// System.out.println("yG=" + bytesToHex(yG));
 
 		// 拼接xA
-		byte[] xA = fixedLen(pA.getAffineX(), LENGTH); 
+		byte[] xA = pA.getAffineX().toByteArray();
 		System.arraycopy(xA, 0, za, pos, xA.length);
 		pos += xA.length;
 
 		// 拼接yA
-		byte[] yA = fixedLen(pA.getAffineY(), LENGTH);
+		byte[] yA = pA.getAffineY().toByteArray();
 		System.arraycopy(yA, 0, za, pos, yA.length);
 		pos += yA.length;
 
 		byte[] tmp = new byte[pos];
 		System.arraycopy(za, 0, tmp, 0, pos);
-		//System.out.println("za=" + bytesToHex(tmp));
-		
+
 		return SM3Digest.Hash(tmp);
 	}
 
 	// 定义点加运算
-	public static ECPoint PointAdd(ECPoint p1, ECPoint p2, BigInteger p, BigInteger a) {
-		BigInteger x1 = p1.getAffineX();
-		BigInteger y1 = p1.getAffineY();
+	private static ECPoint PointAdd(ECPoint p1, ECPoint p2, EllipticCurve curve) {
+		BigInteger t = new BigInteger("00", 16);
+		ECFieldFp fd = (ECFieldFp) curve.getField();
+		BigInteger p = fd.getP();
 
-		BigInteger x2 = p2.getAffineX();
-		BigInteger y2 = p2.getAffineY();
+		// 相同点相加
+		if (p1.equals(p2)) {
+			BigInteger a = curve.getA();
+			// t = (3*x1^2 + a)/(2*y1);
+			BigInteger tmp1 = p1.getAffineX().pow(2).multiply(new BigInteger("3", 10)).add(a);
 
-		// System.out.println("p:" + p.toString(10));
-		// System.out.println("a:" + a.toString(10));
-		// System.out.println("x1:" + x1.toString(10));
-		// System.out.println("y1:" + y1.toString(10));
+			BigInteger tmp2 = p1.getAffineY().multiply(new BigInteger("2", 10));
 
-		if (p1.equals(ECPoint.POINT_INFINITY)) {
-			return p2;
-		}
+			t = tmp2.modInverse(p).multiply(tmp1).mod(p);
 
-		if (p2.equals(ECPoint.POINT_INFINITY)) {
-			return p1;
+			BigInteger x3 = t.pow(2).subtract(p1.getAffineX().multiply(new BigInteger("2", 10)));
+
+			BigInteger y3 = p1.getAffineX().subtract(x3).multiply(t).subtract(p1.getAffineY());
+
+			x3 = x3.add(p).mod(p);
+			y3 = y3.add(p).mod(p);
+
+			ECPoint pt = new ECPoint(x3, y3);
+			return pt;
 		}
 
 		// 互逆相加
-		if (x1.equals(x2) && (y1.add(y2).mod(p).equals(0))) {
-			return ECPoint.POINT_INFINITY;
+		if (p1.getAffineX().equals(p2.getAffineX()) && p1.getAffineY().add(p2.getAffineY()).equals(0)) {
+			return new ECPoint(BigInteger.ZERO, BigInteger.ZERO);
 		} else {
 			// 相异非互逆
-			// λ = (y2-y1)/(x2-x1) 若 x1!=x2
-			// λ = (3*x1^2 + a)/(2*y1) 若 x1=x2
+			// t = (p2.y - p1.y)/(p2.x - p1.x);
+			BigInteger tmp1 = p2.getAffineY().subtract(p1.getAffineY());
+			BigInteger tmp2 = p2.getAffineX().subtract(p1.getAffineX());
+			t = tmp2.modInverse(p).multiply(tmp1).mod(p);
 
-			BigInteger lambda = new BigInteger("0");
-			if (x1.equals(x2)) {
-				// System.out.println("x1 == x2");
-				BigInteger tmp1 = x1.modPow(new BigInteger("2"), p).multiply(new BigInteger("3")).add(a);
-				BigInteger tmp2 = y1.multiply(new BigInteger("2")).modInverse(p);
+			BigInteger x3 = t.pow(2).subtract(p1.getAffineX()).subtract(p2.getAffineX());
 
-				lambda = tmp1.multiply(tmp2).mod(p);
-			} else {
-				// System.out.println("x1 != x2");
-				lambda = y2.subtract(y1).multiply(x2.subtract(x1).modInverse(p)).mod(p);
-			}
+			BigInteger y3 = p1.getAffineX().subtract(x3).multiply(t).subtract(p1.getAffineY());
 
-			BigInteger x3 = lambda.modPow(new BigInteger("2"), p).subtract(x1).mod(p).subtract(x2).mod(p);
+			x3 = x3.add(p).mod(p);
+			y3 = y3.add(p).mod(p);
 
-			BigInteger y3 = x1.subtract(x3).mod(p).multiply(lambda).mod(p).subtract(y1).mod(p);
 			ECPoint pt = new ECPoint(x3, y3);
 			return pt;
 		}
 	}
 
 	// 定义倍点运算
-	public static ECPoint PointMul(BigInteger k, ECPoint pt, BigInteger p, BigInteger a) {
-		int l = k.bitLength();
-		ECPoint Q = ECPoint.POINT_INFINITY;
+	private static ECPoint PointMul(BigInteger k, ECPoint pt, EllipticCurve curve) {
+		int len = k.bitLength();
+		ECPoint Q = new ECPoint(pt.getAffineX(), pt.getAffineY());
 
-		for (int j = l - 1; j >= 0; j--) {
-			Q = PointAdd(Q, Q, p, a);
-			if (k.testBit(j)) {
-				Q = PointAdd(Q, pt, p, a);
+		for (int i = len - 2; i >= 0; i--) {
+			Q = PointAdd(Q, Q, curve);
+			if (k.testBit(i)) {
+				Q = PointAdd(Q, pt, curve);
 			}
 		}
 		return Q;

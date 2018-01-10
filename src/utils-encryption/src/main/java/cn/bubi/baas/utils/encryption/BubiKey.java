@@ -3,7 +3,6 @@ package cn.bubi.baas.utils.encryption;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -12,11 +11,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
-import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
@@ -28,12 +25,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import cfca.sadk.algorithm.common.Mechanism;
 import cfca.sadk.algorithm.sm2.SM2PrivateKey;
 import cfca.sadk.algorithm.sm2.SM2PublicKey;
-import cfca.sadk.algorithm.util.BigIntegerUtil;
 import cfca.sadk.algorithm.util.FileUtil;
 import cfca.sadk.lib.crypto.JCrypto;
 import cfca.sadk.lib.crypto.Session;
-import cfca.sadk.org.bouncycastle.asn1.ASN1Integer;
-import cfca.sadk.org.bouncycastle.asn1.ASN1Sequence;
 import cfca.sadk.org.bouncycastle.util.Arrays;
 import cfca.sadk.util.Base64;
 import cfca.sadk.util.CertUtil;
@@ -42,6 +36,7 @@ import cfca.sadk.util.KeyUtil;
 import cfca.sadk.x509.certificate.X509Cert;
 import cn.bubi.baas.utils.encryption.utils.Base58;
 import cn.bubi.baas.utils.encryption.utils.BubiKeyMember;
+import cn.bubi.baas.utils.encryption.utils.Common;
 import cn.bubi.baas.utils.encryption.utils.HexFormat;
 import cn.bubi.crc8.CRC8;
 import cn.bubi.sm3.SM3Digest;
@@ -67,8 +62,8 @@ public class BubiKey {
 	
 	BubiKeyMember bubiKeyMember_ = new BubiKeyMember();
 
-	public BubiKey() {
-		
+	public BubiKey() throws Exception {
+		this(BubiKeyType.ED25519);
 	}
 	/**
 	 * 产生一个随机的私钥对象
@@ -96,7 +91,7 @@ public class BubiKey {
 	        SM2PublicKey pubKey = (SM2PublicKey)keypair.getPublic();
 	        SM2PrivateKey priKey = (SM2PrivateKey)keypair.getPrivate();
 	        bubiKeyMember_.setRaw_skey_(priKey.getD_Bytes());
-	        bubiKeyMember_.setRaw_pkey_(getSM2PublicKey(pubKey));
+	        bubiKeyMember_.setRaw_pkey_(Common.getSM2PublicKey(pubKey));
 			break;
 		}
 		case RSA: {
@@ -240,8 +235,7 @@ public class BubiKey {
 	 * 传私钥构造，除CFCA外，其他公钥可为空；
 	 * @param bSkey 私钥字符串
 	 * @param bPkey 公钥字符串
-	 * @throws InvalidKeySpecException
-	 * @throws NoSuchAlgorithmException
+	 * @throws Exception
 	 */
 	public BubiKey(String bSkey) throws Exception {
 		this(bSkey, null);
@@ -251,8 +245,7 @@ public class BubiKey {
 	 * 传私钥和公钥构造，除CFCA外，其他公钥可为空；
 	 * @param bSkey 私钥字符串
 	 * @param bPkey 公钥字符串
-	 * @throws InvalidKeySpecException
-	 * @throws NoSuchAlgorithmException
+	 * @throws Exception
 	 */
 	public BubiKey(String bSkey, String bPkey) throws Exception {
 		boolean[] isPkeyEmpty = new boolean[1];
@@ -285,9 +278,7 @@ public class BubiKey {
 	 * 对消息进行签名
 	 * @param msg 要签名的消息
 	 * @return 签名内容
-	 * @throws SignatureException
-	 * @throws InvalidKeyException
-	 * @throws NoSuchAlgorithmException
+	 * @throws Exception
 	 */
 	public byte[] sign(byte[] msg) throws Exception {
 		return sign(msg, bubiKeyMember_);
@@ -298,9 +289,7 @@ public class BubiKey {
 	 * @param msg 要签名的消息
 	 * @param bPkey 公钥
 	 * @return 签名内容
-	 * @throws SignatureException
-	 * @throws InvalidKeyException
-	 * @throws NoSuchAlgorithmException
+	 * @throws Exception
 	 */
 	public static byte[] sign(byte[] msg, String bSkey) throws Exception {
 		return sign(msg, bSkey, null);
@@ -312,9 +301,7 @@ public class BubiKey {
 	 * @param bSkey 私钥
 	 * @param bPkey 公钥
 	 * @return 签名内容
-	 * @throws SignatureException
-	 * @throws InvalidKeyException
-	 * @throws NoSuchAlgorithmException
+	 * @throws Exception
 	 */
 	public static byte[] sign(byte[] msg, String bSkey, String bPkey) throws Exception {
 		boolean[] isPkeyEmpty = new boolean[1];
@@ -341,10 +328,7 @@ public class BubiKey {
 	 * @param pkey 公钥字符串
 	 * @param sig 签名
 	 * @return
-	 * @throws Exception 
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeyException
-	 * @throws SignatureException
+	 * @throws Exception
 	 */
 	public boolean verify(byte[] msg, byte[] signMsg) throws Exception {
 		boolean verifySuccess = false;
@@ -360,9 +344,6 @@ public class BubiKey {
 	 * @param sig 签名
 	 * @return
 	 * @throws Exception 
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeyException
-	 * @throws SignatureException
 	 */
 	public static boolean verify(byte[] msg, byte[] signMsg, String pkey) throws Exception {
 		KeyFormatType keyFormatType = getKeyFormatType(null, pkey, null, null);
@@ -377,8 +358,7 @@ public class BubiKey {
 	/**
 	 * 根据私钥判断BubiKey的类型；
 	 * @param bSkey 私钥字符串
-	 * @throws InvalidKeySpecException
-	 * @throws NoSuchAlgorithmException
+	 * @throws Exception
 	 */
 	public static BubiKeyType getBubiKeyType(String bSkey) throws Exception {
 		KeyFormatType keyFormatType = getKeyFormatType(bSkey, null, null, null);
@@ -393,7 +373,7 @@ public class BubiKey {
 		}
 		
 		if (skey.length <= 9) {
-			throw new Exception("the Base58 PrivateKey is invalid");
+			throw new Exception("private key is invalid");
 		}
 		// 3字节前缀，1字节类型，n字节私钥，4字节校验码
 		
@@ -470,7 +450,8 @@ public class BubiKey {
 	/**
 	 * 根据私钥计算公钥，CFCA不支持
 	 * @param pKey 私钥字符串
-	 * @return 编码后公钥
+	 * @return 布比2.0公钥
+	 * @throws Exception 
 	 */
 	public static String getB58PublicKey(String bSkey) throws Exception {
 		BubiKeyMember member = new BubiKeyMember();
@@ -482,8 +463,9 @@ public class BubiKey {
 	
 	/**
 	 * 根据私钥计算公钥，CFCA不支持
-	 * @param pKey 私钥字符串
-	 * @return 编码后公钥
+	 * @param bSkey 编码后的私钥
+	 * @return 布比3.0公钥
+	 * @throws Exception 
 	 */
 	public static String getB16PublicKey(String bSkey) throws Exception {
 		BubiKeyMember member = new BubiKeyMember();
@@ -496,7 +478,8 @@ public class BubiKey {
 	/**
 	 * 根据公钥计算bubi地址
 	 * @param pKey 公钥字符串
-	 * @return bubi地址
+	 * @return bubi2.0地址
+	 * @throws Exception 
 	 */
 	public static String getB58Address(String pKey) throws Exception {
 		KeyFormatType keyFormatType = getKeyFormatType(null, pKey, null, null);
@@ -509,7 +492,8 @@ public class BubiKey {
 	/**
 	 * 根据公钥计算bubi地址
 	 * @param pKey 公钥字符串
-	 * @return bubi地址
+	 * @return bubi3.0地址
+	 * @throws Exception 
 	 */
 	public static String getB16Address(String pKey) throws Exception {
 		KeyFormatType keyFormatType = getKeyFormatType(null, pKey, null, null);
@@ -525,17 +509,50 @@ public class BubiKey {
 		switch(keyFormatType) {
 		case B58: {
 			byte[] skey = Base58.decode(bSkey);
-			rawSKey = new byte[skey.length - 9];
 			
 			if (skey.length <= 9) {
-				throw new Exception("the Base58 PrivateKey is invalid");
+				throw new Exception("private key is invalid");
 			}
 			// 3字节前缀，1字节类型，n字节私钥，4字节校验码
 			if (skey[3] > 4 || skey[3] < 1) {
-				throw new Exception("the Base58 PrivateKey is invalid");
+				throw new Exception("private key is invalid");
 			}
-			System.arraycopy(skey, 4, rawSKey, 0, rawSKey.length);
 			type = BubiKeyType.values()[skey[3] - 1];
+			
+			// 验证checksum
+			byte[] checkSrc = new byte[skey.length - 4];
+			byte[] checkSum = new byte[4];
+			System.arraycopy(skey, 0, checkSrc, 0, checkSrc.length);
+			System.arraycopy(skey, checkSrc.length, checkSum, 0, 4);
+			byte[] hash1 = null;
+			byte[] hash2 = null;
+			if (type == BubiKeyType.ED25519) {
+				MessageDigest sha256 = null;
+				try {
+					sha256 = MessageDigest.getInstance("SHA-256");
+
+				} catch (NoSuchAlgorithmException e) {
+					e.printStackTrace();
+				}
+				sha256.update(checkSrc);
+				hash1 = sha256.digest();
+				
+				sha256.reset();
+				sha256.update(hash1);
+				hash2 = sha256.digest();
+			}
+			else {
+				hash1 = SM3Digest.Hash(checkSrc);
+				hash2 = SM3Digest.Hash(hash1);
+			}
+			byte[] HashSum = new byte[4];
+			System.arraycopy(hash2, 0, HashSum, 0, 4);
+			if (!Arrays.areEqual(HashSum, checkSum)) {
+				throw new Exception("private key is invalid");
+			}
+			
+			rawSKey = new byte[skey.length - 9];
+			System.arraycopy(skey, 4, rawSKey, 0, rawSKey.length);
 			
 			break;
 		}
@@ -574,7 +591,7 @@ public class BubiKey {
 			}
 			
 			if (pkey[0] > 4 || pkey[0] < 1) {
-				throw new Exception("the Base58 PublicKey is invalid");
+				throw new Exception("public key is invalid");
 			}
 			
 			System.arraycopy(pkey, 4, rawPKey, 0, pkey.length - 4);
@@ -624,9 +641,9 @@ public class BubiKey {
 			SM2PrivateKey privateKey = new SM2PrivateKey(rawSkey);
 			SM2PublicKey publicKey =  privateKey.getSM2PublicKey();
 			if (isPkeyEmpty) {
-				member.setRaw_pkey_(getSM2PublicKey(publicKey));
+				member.setRaw_pkey_(Common.getSM2PublicKey(publicKey));
 	        }
-			else if (!Arrays.areEqual(getSM2PublicKey(publicKey), rawPkey)) {
+			else if (!Arrays.areEqual(Common.getSM2PublicKey(publicKey), rawPkey)) {
 				throw new Exception("the private key does not match the public key, please check");
 			}
 			break;
@@ -756,12 +773,12 @@ public class BubiKey {
 			final cfca.sadk.util.Signature signature = new cfca.sadk.util.Signature();
 			
 			SM2PrivateKey privateKey = KeyUtil.getSM2PrivateKey(rawSkey, null, null) ;
-			SM2PublicKey publicKey  = getSM2PublicKey(rawPkey);
+			SM2PublicKey publicKey  = Common.getSM2PublicKey(rawPkey);
 			final byte[] userId = "1234567812345678".getBytes("UTF8");
 			final String signAlg = Mechanism.SM3_SM2;
 	        // 
 	        byte[] hash = HashUtil.SM2HashMessageByBCWithZValue(userId, msg, publicKey.getPubXByInt(), publicKey.getPubYByInt());
-	        signMessage = ASN1toRS(Base64.decode(signature.p1SignByHash(signAlg, hash, privateKey, session)));
+	        signMessage = Common.ASN1toRS(Base64.decode(signature.p1SignByHash(signAlg, hash, privateKey, session)));
 			break;
 		}
 			
@@ -841,7 +858,7 @@ public class BubiKey {
 			Session session = JCrypto.getInstance().openSession(deviceName);
 			final cfca.sadk.util.Signature signature = new cfca.sadk.util.Signature();
 			
-			SM2PublicKey publicKey  = getSM2PublicKey(rawpkey);
+			SM2PublicKey publicKey  = Common.getSM2PublicKey(rawpkey);
 			final byte[] userId = "1234567812345678".getBytes("UTF8");
 			final String signAlg = Mechanism.SM3_SM2;
 	        // 
@@ -905,7 +922,7 @@ public class BubiKey {
 		
 		buff[3] = (byte) (type.ordinal() + 1);
 		
-		if (type != BubiKeyType.ECCSM2) {
+		if (type == BubiKeyType.ED25519) {
 			MessageDigest sha256 = null;
 			try {
 				sha256 = MessageDigest.getInstance("SHA-256");
@@ -1010,7 +1027,7 @@ public class BubiKey {
 
 		byte[] hash1 = null;
 		byte[] hash2 = null;
-		if (BubiKeyType.ECCSM2 == bubiKeyType) {
+		if (bubiKeyType != BubiKeyType.ED25519) {
 			hash1 = SM3Digest.Hash(buff);
 			hash2 = SM3Digest.Hash(hash1);
 		}
@@ -1135,40 +1152,5 @@ public class BubiKey {
 		
 		
 		return bret;
-	}
-	
-	private static byte[] getSM2PublicKey(SM2PublicKey pubKey) {
-		byte[] raw_pkey = new byte[65];
-		byte[] x = pubKey.getPubX();
-		byte[] y = pubKey.getPubY();
-		
-		raw_pkey[0] = 4;
-		System.arraycopy(x, 0, raw_pkey, 1, 32);
-		System.arraycopy(y, 0, raw_pkey, 33, 32);
-		
-		return raw_pkey;
-	}
-	
-	private static SM2PublicKey getSM2PublicKey(byte[] raw_pkey) {
-		byte[] x = new byte[32];
-		byte[] y = new byte[32];
-		System.arraycopy(raw_pkey, 1, x, 0, 32);
-		System.arraycopy(raw_pkey, 33, y, 0, 32);
-		
-		SM2PublicKey publicKey = new SM2PublicKey(x, y);
-		
-		return publicKey;
-	}
-	
-	private static byte[] ASN1toRS(byte[] asn1RS) {
-		ASN1Sequence sequence = ASN1Sequence.getInstance(asn1RS);
-		ASN1Integer R = (ASN1Integer)sequence.getObjectAt(0);
-		ASN1Integer S = (ASN1Integer)sequence.getObjectAt(1);
-		byte[] r = BigIntegerUtil.asUnsigned32ByteArray(R.getPositiveValue());
-		byte[] s = BigIntegerUtil.asUnsigned32ByteArray(S.getPositiveValue());
-		byte[] signature = new byte[64];
-		System.arraycopy(r, 0, signature, 0, 32);
-		System.arraycopy(s, 0, signature, 32, 32);
-		return signature;
 	}
 }
