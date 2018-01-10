@@ -1,12 +1,12 @@
 # __布比JAVA ENCRYPTIOIN使用文档__
 
 ## 1 用途
-用于生成公私钥和地址，以及签名，和验签
+用于生成公私钥和地址，以及签名，和验签，BubiKey主要针对布比3.3以下的版本，BubiKey3主要针对布比3.3及以上的版本
 
 ## 2 jar包引用
 所依赖的jar包在jar文件夹中寻找，依赖的jar包如下：
 
-1. utils-encryption-1.3.16-SNAPSHOT.jar:BubiKey的相关操作，详细请看下面介绍
+1. utils-encryption-1.3.16-SNAPSHOT.jar:BubiKey的相关操作和BubkKey3的相关操作，详细请看下面介绍
 2. sadk-3.2.3.0.RELEASE.jar:用于CFCA的签名操作
 3. eddsa-0.1.0.jar：ed25519签名包
 4. bcprov-jdk15on-1.52.jar：证书操作依赖包
@@ -109,6 +109,8 @@ BubiKey bubiKey = new BubiKey(fileData, password, alias);
 例如：
 ```java
 BubiKey bubiKey = new BubiKey(BubiKeyType.ED25519);
+或
+BubiKey3 bubiKey = new BubiKey3(BubiKeyType.ED25519);
 String src = "test";
 byte[] signMsg = bubiKey.sign(src.getBytes());
 ```
@@ -137,6 +139,8 @@ String src = "test";
 String privateKey;
 String publicKey;
 byte[] sign = BubiKey.sign(src.getBytes(), privateKey, publicKey);
+或
+byte[] sign = BubiKey3.sign(src.getBytes(), privateKey, publicKey);
 ```
 
 #### 3.3 验签（非静态）
@@ -160,6 +164,8 @@ byte[] sign = BubiKey.sign(src.getBytes(), privateKey, publicKey);
 ```java
 String src = "test";
 BubiKey bubiKey = new BubiKey(BubiKeyType.ECCSM2);
+或
+BubiKey3 bubiKey = new BubiKey3(BubiKeyType.ECCSM2);
 byte[] sign = bubiKey.sign(src.getBytes());
 Boolean verifyResult = bubiKey.verify(src.getBytes(), sign);
 ```
@@ -189,6 +195,9 @@ String privateKey;
 String publicKey;
 byte[] sign = BubiKey.sign(src.getBytes(), privateKey, publicKey);
 Boolean verifyResult = BubiKey.verify(src.getBytes(), sign, KeyFormatType.B58, publicKey);
+或
+byte[] sign = BubiKey3.sign(src.getBytes(), privateKey, publicKey);
+Boolean verifyResult = BubiKey3.verify(src.getBytes(), sign, KeyFormatType.B58, publicKey);
 ```
 
 
@@ -303,7 +312,23 @@ String address = bubiKey.getB16Address();
 String addressStatic = bubiKey.getB16Address(publicKey);
 ```
 
-#### 3.11 计算hash
+#### 3.11 获取布比3.3版本以上的公私钥地址
+构造、签名和验签的接口名是一样的，获取私钥、公钥和地址的接口名发生变化
+getEncPrivateKey、getEncPublicKey()、getBubiAddress()
+
+注意：主要用于布比3.3及以上版本
+
+例如：
+```java
+BubiKey bubiKey = new BubiKey(BubiKeyType.ECCSM2);
+String privateKey = bubiKey.getEncPrivateKey();
+String publicKey = bubiKey.getEncPublicKey();
+String publicKeyStatic = BubiKey.getEncPublicKey(privateKey);
+String address = bubiKey.getBubiAddress();
+String addressStatic = bubiKey.getBubiAddress(publicKey);
+```
+
+#### 3.12 计算hash
 方法名：GenerateHashHex
 路径：cn.bubi.baas.utils.encryption.utils.HashUtil
 
