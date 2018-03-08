@@ -9,18 +9,19 @@
 
 	<groupId>cn.bubi.blockchain</groupId>
 	<artifactId>blockchain-sdk-root</artifactId>
-	<version>2.0.15-SNAPSHOT</version>
+	<version>2.0.16-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<blockchain.protobuf.version>3.1.10-SNAPSHOT</blockchain.protobuf.version>
+		<blockchain.protobuf.version>3.1.11-SNAPSHOT</blockchain.protobuf.version>
 	</properties>
 
 	<modules>
 		<module>blockchain-sdk</module>
 		<module>blockchain-sdk3</module>
+		<module>blockchain-sdk3-mo</module>
 	</modules>
 
 	<dependencies>
