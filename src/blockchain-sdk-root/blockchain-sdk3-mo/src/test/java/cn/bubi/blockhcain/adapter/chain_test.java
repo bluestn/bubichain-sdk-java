@@ -14,6 +14,9 @@ limitations under the License.
 package cn.bubi.blockhcain.adapter;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +25,11 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import cfca.sadk.algorithm.util.FileUtil;
-import cn.bubi.baas.utils.encryption.BubiKey;
+import cn.bubi.baas.utils.encryption.BubiKey3;
 import cn.bubi.baas.utils.encryption.BubiKeyType;
 import cn.bubi.baas.utils.encryption.CertFileType;
+import cn.bubi.baas.utils.encryption.utils.HashUtil;
+import cn.bubi.baas.utils.encryption.utils.HexFormat;
 import cn.bubi.baas.utils.encryption.utils.HttpKit;
 import cn.bubi.blockchain.adapter.BlockChainAdapter;
 import cn.bubi.blockchain.adapter.BlockChainAdapterProc;
@@ -39,6 +44,12 @@ import cn.bumo.blockchain.adapter3.Chain.Operation;
 import cn.bumo.blockchain.adapter3.Chain.OperationCreateAccount;
 import cn.bumo.blockchain.adapter3.Chain.OperationIssueAsset;
 import cn.bumo.blockchain.adapter3.Chain.OperationPayment;
+import cn.bumo.blockchain.adapter3.Chain.OperationSetMetadata;
+import cn.bumo.blockchain.adapter3.Chain.OperationSetSignerWeight;
+import cn.bumo.blockchain.adapter3.Chain.OperationSetThreshold;
+import cn.bumo.blockchain.adapter3.Chain.OperationTypeThreshold;
+import cn.bumo.blockchain.adapter3.Chain.Signer;
+import cn.bumo.blockchain.adapter3.Chain.SignerOrBuilder;
 import cn.bumo.blockchain.adapter3.Chain.Transaction;
 import cn.bumo.blockchain.adapter3.Chain.TransactionEnv;
 
@@ -68,7 +79,7 @@ public class chain_test {
 		
 		logger_ = LoggerFactory.getLogger(BlockChainAdapter.class);
 		object_ = new Object();
-		chain_message_one_ = new BlockChainAdapter("ws://127.0.0.1:7053");
+		chain_message_one_ = new BlockChainAdapter("ws://127.0.0.1:36003");
 		chain_message_one_.AddChainResponseMethod(Overlay.ChainMessageType.CHAIN_HELLO_VALUE, new BlockChainAdapterProc() {
 			public void ChainMethod (byte[] msg, int length) {
 				OnChainHello(msg, length);
@@ -87,6 +98,11 @@ public class chain_test {
 		chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_LEDGER_HEADER_VALUE, new BlockChainAdapterProc() {
 			public void ChainMethod (byte[] msg, int length) {
 				OnChainLedgerHeader(msg, length);
+			}
+		});
+		chain_message_one_.AddChainMethod(Overlay.ChainMessageType.CHAIN_TX_ENV_STORE_VALUE, new BlockChainAdapterProc() {
+			public void ChainMethod (byte[] msg, int length) {
+				OnChainTxEnvStore(msg, length);
 			}
 		});
 		
@@ -109,8 +125,17 @@ public class chain_test {
 	private void OnChainPeerMessage(byte[] msg, int length) {
 		try {
 			Overlay.ChainPeerMessage chain_peer_message = Overlay.ChainPeerMessage.parseFrom(msg);
-			logger_.info("=================receive peer message info============");
-			logger_.info(chain_peer_message.toString());
+			System.out.print("chain peer message: " + chain_peer_message.getData().toStringUtf8() + ", src: " + 
+			chain_peer_message.getSrcPeerAddr() + ", dest: ");
+			for (int i = 0; i < chain_peer_message.getDesPeerAddrsCount(); i++) {
+				System.out.print(chain_peer_message.getDesPeerAddrs(i));
+				if (i != chain_peer_message.getDesPeerAddrsCount() - 1) {
+					System.out.print(", ");
+				}
+				else {
+					System.out.println("");
+				}
+			}
 		} catch (InvalidProtocolBufferException e) {
 			logger_.error(e.getMessage());
 		}
@@ -123,8 +148,17 @@ public class chain_test {
 		try {
 			Overlay.ChainTxStatus chain_tx_status = Overlay.ChainTxStatus.parseFrom(msg);
 			if (chain_tx_status.getStatus() == Overlay.ChainTxStatus.TxStatus.FAILURE || chain_tx_status.getStatus() == Overlay.ChainTxStatus.TxStatus.COMPLETE) {
-				logger_.info("receive time:" + System.currentTimeMillis() + ", chain_tx_status.status--" + chain_tx_status.getTxHash() + "," + chain_tx_status.getStatus() + "," + chain_tx_status.getErrorDesc());
+				System.out.println("hash: " + chain_tx_status.getTxHash() + ", status: " + chain_tx_status.getStatus() + ", desc: " + chain_tx_status.getErrorDesc() + ", receive time:" + System.currentTimeMillis());
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void OnChainTxEnvStore(byte[] msg, int length) {
+		try {
+			Chain.TransactionEnvStore tranEnvStore = Chain.TransactionEnvStore.parseFrom(msg);
+			System.out.println("hash:" + HexFormat.byteToHex(tranEnvStore.getHash().toByteArray()).toLowerCase() + ", error code: " + tranEnvStore.getErrorCode() + ", desc: " + tranEnvStore.getErrorDesc() + ", receive time:" + System.currentTimeMillis());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -133,17 +167,23 @@ public class chain_test {
 	private void OnChainLedgerHeader(byte[] msg, int length) {
 		try {
 			Chain.LedgerHeader ledger_header = Chain.LedgerHeader.parseFrom(msg);
-			logger_.info("================" + ledger_header.toString());
+			System.out.println("new ledger seq: " + ledger_header.getSeq() + ", close time:" + ledger_header.getCloseTime());
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public BubiKey TestCreateAccount(String url, String srcAddress, String srcPrivate, String srcPublic, 
+	public BubiKey3 TestCreateAccount(String url, String srcAddress, String srcPrivate, String srcPublic, 
 			int masterWeight, int threshold, BubiKeyType algorithm, CertFileType certFileType, String certFile, String password) {
-		BubiKey bubikey_new = null;
+		BubiKey3 bubikey_new = null;
 		try {
+			// get hash type
+			String getHello = url + "/hello";
+			String hello = HttpKit.post(getHello, "");
+			JSONObject ho = JSONObject.parseObject(hello);
+			Integer hash_type = ho.containsKey("hash_type") ? ho.getInteger("hash_type") : 0;
+			
 			// getAccount
 			String getAccount = url + "/getAccount?address=" + srcAddress;
 			String txSeq = HttpKit.post(getAccount, "");
@@ -154,40 +194,40 @@ public class chain_test {
 			// generate new Account address, PrivateKey, publicKey
 			if (algorithm == BubiKeyType.CFCA) {
 				byte fileData[] = FileUtil.getBytesFromFile(certFile);
-				bubikey_new = new BubiKey(certFileType, fileData, password);
+				bubikey_new = new BubiKey3(certFileType, fileData, password);
 			}
 			else {
-				bubikey_new = new BubiKey(algorithm);
+				bubikey_new = new BubiKey3(algorithm);
+				System.out.println("address: " + bubikey_new.getBubiAddress());
+				System.out.println("private key: " + bubikey_new.getEncPrivateKey());
+				System.out.println("public key: " + bubikey_new.getEncPublicKey());
 			}
 			
 			// use src account sign
-			BubiKey bubiKey_src = new BubiKey(srcPrivate);
-			
+			BubiKey3 bubiKey_src = new BubiKey3(srcPrivate);
 			
 			// generate transaction
-			Transaction.Builder tran = Transaction.newBuilder();
+			TransactionEnv.Builder tranEnv = TransactionEnv.newBuilder();
+			Transaction.Builder tran = tranEnv.getTransactionBuilder();
 			tran.setSourceAddress(srcAddress);
-			tran.setNonce(nonce + 3);
+			tran.setNonce(nonce + 1);
+			tran.setFee(500000);
 			Operation.Builder oper = tran.addOperationsBuilder();
 			oper.setType(Operation.Type.CREATE_ACCOUNT);
-			OperationCreateAccount.Builder createAccount = OperationCreateAccount.newBuilder();
-			createAccount.setDestAddress(bubikey_new.getB16Address());
-			AccountPrivilege.Builder accountPrivilege = AccountPrivilege.newBuilder();
+			OperationCreateAccount.Builder createAccount = oper.getCreateAccountBuilder();
+			createAccount.setDestAddress(bubikey_new.getBubiAddress());
+			createAccount.setInitBalance(200000000);
+			AccountPrivilege.Builder accountPrivilege = createAccount.getPrivBuilder();
 			accountPrivilege.setMasterWeight(1);
-			AccountThreshold.Builder accountThreshold = AccountThreshold.newBuilder();
+			AccountThreshold.Builder accountThreshold = accountPrivilege.getThresholdsBuilder();
 			accountThreshold.setTxThreshold(1);
-			accountPrivilege.setThresholds(accountThreshold);
-			createAccount.setPriv(accountPrivilege);
-			oper.setCreateAccount(createAccount);
 			
-			Signature.Builder signature  = Signature.newBuilder();
-			signature.setPublicKey(bubiKey_src.getB16PublicKey());
-			byte[] sign_data = BubiKey.sign(tran.build().toByteArray(), srcPrivate);
+			Signature.Builder signature  = tranEnv.addSignaturesBuilder();
+			signature.setPublicKey(bubiKey_src.getEncPublicKey());
+			byte[] sign_data = bubiKey_src.sign(tran.build().toByteArray());
 			signature.setSignData(ByteString.copyFrom(sign_data));
 			
-			TransactionEnv.Builder tranEnv = TransactionEnv.newBuilder(); 
-			tranEnv.setTransaction(tran.build());
-			tranEnv.addSignatures(signature.build());
+			System.out.println("create account hash: " + HashUtil.GenerateHashHex(tran.build().toByteArray(), hash_type));
 			
 			chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, tranEnv.build().toByteArray());
 		} catch (Exception e) {
@@ -197,56 +237,17 @@ public class chain_test {
 		return bubikey_new;
 	}
 	
-	@SuppressWarnings("unused")
-	public BubiKey TestIssue(String url, String srcAddress, String srcPrivate, String srcPublic, 
-			int masterWeight, int threshold, BubiKeyType algorithm, CertFileType certFileType, String certFile, String password) {
-		BubiKey bubikey_new = null;
+	public void TestIssue(String url, BubiKey3 account) {
 		try {
-			String privateKey = "privbtZ1Fw5RRWD4ZFR6TAMWjN145zQJeJQxo3EXAABfgBjUdiLHLLHF";
-			String address = "bubiV8i2558GmfnBREe87ZagdkKsfeJh5HYjcNpa";
-			String httpRequest = "http://127.0.0.1:19333";
-			String getAccount = url + "/getAccount?address=" + address;
-			String txSeq = HttpKit.post(getAccount, "");
-			JSONObject tx = JSONObject.parseObject(txSeq);
-			String seq_str = tx.getJSONObject("result").containsKey("nonce") ? tx.getJSONObject("result").getString("nonce") : "0";
-			long nonce = Long.parseLong(seq_str);
-					
-			// generate transaction
-			Transaction.Builder tran = Transaction.newBuilder();
-			tran.setSourceAddress(srcAddress);
-			tran.setNonce(nonce + 1);
+			String srcAddress = account.getBubiAddress();
+			String srcPublic = account.getEncPublicKey();
 			
-		    // add operations
-			Operation.Builder oper = tran.addOperationsBuilder();
-			oper.setType(Operation.Type.ISSUE_ASSET);
-			OperationIssueAsset.Builder issuer = OperationIssueAsset.newBuilder();
-			issuer.setCode("coin");
-			issuer.setAmount(1);
-			oper.setIssueAsset(issuer);
-			
-		    // add signature list
-			Signature.Builder signature  = Signature.newBuilder();
-			signature.setPublicKey(srcPublic);
-			byte[] sign_data = BubiKey.sign(tran.build().toByteArray(), srcPrivate);
-			signature.setSignData(ByteString.copyFrom(sign_data));
-					
-			TransactionEnv.Builder tranEnv = TransactionEnv.newBuilder(); 
-			tranEnv.setTransaction(tran.build());
-			tranEnv.addSignatures(signature.build());
-
-			// send transaction
-			chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, tranEnv.build().toByteArray());
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
-		return bubikey_new;
-	}
-	
-	public BubiKey TestPayment(String url, String srcAddress, String srcPrivate, String srcPublic, 
-			int masterWeight, int threshold, BubiKeyType algorithm, CertFileType certFileType, String certFile, String password) {
-		BubiKey bubikey_new = null;
-		try {
-			String destAddress = null;
+			// get hash type
+			String getHello = url + "/hello";
+			String hello = HttpKit.post(getHello, "");
+			JSONObject ho = JSONObject.parseObject(hello);
+			Integer hash_type = ho.containsKey("hash_type") ? ho.getInteger("hash_type") : 0;
+						
 			String getAccount = url + "/getAccount?address=" + srcAddress;
 			String txSeq = HttpKit.post(getAccount, "");
 			JSONObject tx = JSONObject.parseObject(txSeq);
@@ -254,38 +255,228 @@ public class chain_test {
 			long nonce = Long.parseLong(seq_str);
 					
 			// generate transaction
-			Transaction.Builder tran = Transaction.newBuilder();
+			TransactionEnv.Builder tranEnv = TransactionEnv.newBuilder(); 
+			Transaction.Builder tran = tranEnv.getTransactionBuilder();
 			tran.setSourceAddress(srcAddress);
 			tran.setNonce(nonce + 1);
+			tran.setFee(500000);
 			
 		    // add operations
 			Operation.Builder oper = tran.addOperationsBuilder();
-			oper.setType(Operation.Type.PAYMENT);
-			OperationPayment.Builder payment = OperationPayment.newBuilder();
-			payment.setDestAddress(destAddress);
-			Asset.Builder asset = Asset.newBuilder();
-			asset.setAmount(1);
-			AssetProperty.Builder assetProperty = AssetProperty.newBuilder();
-			assetProperty.setCode("coin");
-			assetProperty.setIssuer(srcAddress);
-			asset.setProperty(assetProperty);
+			oper.setType(Operation.Type.ISSUE_ASSET);
+			OperationIssueAsset.Builder issuer = oper.getIssueAssetBuilder();
+			issuer.setCode("coin");
+			issuer.setAmount(100000);
 			
 		    // add signature list
-			Signature.Builder signature  = Signature.newBuilder();
+			Signature.Builder signature  = tranEnv.addSignaturesBuilder();
 			signature.setPublicKey(srcPublic);
-			byte[] sign_data = BubiKey.sign(tran.build().toByteArray(), srcPrivate);
+			byte[] sign_data = account.sign(tran.build().toByteArray());
 			signature.setSignData(ByteString.copyFrom(sign_data));
-					
-			TransactionEnv.Builder tranEnv = TransactionEnv.newBuilder(); 
-			tranEnv.setTransaction(tran.build());
-			tranEnv.addSignatures(signature.build());
+			
+			System.out.println("issue hash: " + HashUtil.GenerateHashHex(tran.build().toByteArray(), hash_type));
 
 			// send transaction
 			chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, tranEnv.build().toByteArray());
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
-		return bubikey_new;
+	}
+	
+	public void TestPayment(String url, BubiKey3 srcAccount, BubiKey3 desAccount) {
+		try {
+			// get hash type
+			String getHello = url + "/hello";
+			String hello = HttpKit.post(getHello, "");
+			JSONObject ho = JSONObject.parseObject(hello);
+			Integer hash_type = ho.containsKey("hash_type") ? ho.getInteger("hash_type") : 0;
+						
+			String srcAddress = srcAccount.getBubiAddress();
+			String destAddress = desAccount.getBubiAddress();
+			String getAccount = url + "/getAccount?address=" + srcAddress;
+			String txSeq = HttpKit.post(getAccount, "");
+			JSONObject tx = JSONObject.parseObject(txSeq);
+			String seq_str = tx.getJSONObject("result").containsKey("nonce") ? tx.getJSONObject("result").getString("nonce") : "0";
+			long nonce = Long.parseLong(seq_str);
+			
+			// generate transaction
+			TransactionEnv.Builder tranEnv = TransactionEnv.newBuilder();
+			Transaction.Builder tran = tranEnv.getTransactionBuilder();
+			tran.setSourceAddress(srcAddress);
+			tran.setNonce(nonce + 1);
+			tran.setFee(50000);
+			
+		    // add operations
+			Operation.Builder oper = tran.addOperationsBuilder();
+			oper.setType(Operation.Type.PAYMENT);
+			OperationPayment.Builder payment = oper.getPaymentBuilder();
+			payment.setDestAddress(destAddress);
+			Asset.Builder asset = payment.getAssetBuilder();
+			asset.setAmount(10000);
+			AssetProperty.Builder assetProperty = asset.getPropertyBuilder();
+			assetProperty.setCode("coin");
+			assetProperty.setIssuer(srcAddress);
+			
+		    // add signature list
+			Signature.Builder signature  = tranEnv.addSignaturesBuilder();
+			signature.setPublicKey(srcAccount.getEncPublicKey());
+			byte[] sign_data = srcAccount.sign(tran.build().toByteArray());
+			signature.setSignData(ByteString.copyFrom(sign_data));
+			
+			System.out.println("payment hash: " + HashUtil.GenerateHashHex(tran.build().toByteArray(), hash_type));
+
+			// send transaction
+			chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, tranEnv.build().toByteArray());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+	}
+	
+	public void TestSetMetadata(String url, BubiKey3 account, String key, String value) {
+		try {
+			String srcAddress = account.getBubiAddress();
+			String srcPublic = account.getEncPublicKey();
+			
+			// get hash type
+			String getHello = url + "/hello";
+			String hello = HttpKit.post(getHello, "");
+			JSONObject ho = JSONObject.parseObject(hello);
+			Integer hash_type = ho.containsKey("hash_type") ? ho.getInteger("hash_type") : 0;
+						
+			String getAccount = url + "/getAccount?address=" + srcAddress;
+			String txSeq = HttpKit.post(getAccount, "");
+			JSONObject tx = JSONObject.parseObject(txSeq);
+			String seq_str = tx.getJSONObject("result").containsKey("nonce") ? tx.getJSONObject("result").getString("nonce") : "0";
+			long nonce = Long.parseLong(seq_str);
+					
+			// generate transaction
+			TransactionEnv.Builder tranEnv = TransactionEnv.newBuilder(); 
+			Transaction.Builder tran = tranEnv.getTransactionBuilder();
+			tran.setSourceAddress(srcAddress);
+			tran.setNonce(nonce + 1);
+			tran.setFee(500000);
+			
+		    // add operations
+			Operation.Builder oper = tran.addOperationsBuilder();
+			oper.setType(Operation.Type.SET_METADATA);
+			OperationSetMetadata.Builder setMetadata = oper.getSetMetadataBuilder();
+			setMetadata.setKey(key);
+			setMetadata.setValue(value);
+			setMetadata.setDeleteFlag(false);
+			
+		    // add signature list
+			Signature.Builder signature  = tranEnv.addSignaturesBuilder();
+			signature.setPublicKey(srcPublic);
+			byte[] sign_data = account.sign(tran.build().toByteArray());
+			signature.setSignData(ByteString.copyFrom(sign_data));
+			
+			System.out.println("set metadata hash: " + HashUtil.GenerateHashHex(tran.build().toByteArray(), hash_type));
+
+			// send transaction
+			chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, tranEnv.build().toByteArray());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+	}
+	
+	public void TestSetSignerWeight(String url, BubiKey3 account, Map<String, Long> signers) {
+		try {
+			String srcAddress = account.getBubiAddress();
+			String srcPublic = account.getEncPublicKey();
+			
+			// get hash type
+			String getHello = url + "/hello";
+			String hello = HttpKit.post(getHello, "");
+			JSONObject ho = JSONObject.parseObject(hello);
+			Integer hash_type = ho.containsKey("hash_type") ? ho.getInteger("hash_type") : 0;
+						
+			String getAccount = url + "/getAccount?address=" + srcAddress;
+			String txSeq = HttpKit.post(getAccount, "");
+			JSONObject tx = JSONObject.parseObject(txSeq);
+			String seq_str = tx.getJSONObject("result").containsKey("nonce") ? tx.getJSONObject("result").getString("nonce") : "0";
+			long nonce = Long.parseLong(seq_str);
+					
+			// generate transaction
+			TransactionEnv.Builder tranEnv = TransactionEnv.newBuilder(); 
+			Transaction.Builder tran = tranEnv.getTransactionBuilder();
+			tran.setSourceAddress(srcAddress);
+			tran.setNonce(nonce + 1);
+			tran.setFee(500000);
+			
+		    // add operations
+			Operation.Builder oper = tran.addOperationsBuilder();
+			oper.setType(Operation.Type.SET_SIGNER_WEIGHT);
+			OperationSetSignerWeight.Builder setMetadata = oper.getSetSignerWeightBuilder();
+			setMetadata.setMasterWeight(10);
+			for(Map.Entry<String, Long> signerWeight : signers.entrySet()) {
+				Signer.Builder signer = setMetadata.addSignersBuilder();
+				signer.setAddress(signerWeight.getKey());
+				signer.setWeight(signerWeight.getValue().longValue());
+			}
+			
+		    // add signature list
+			Signature.Builder signature  = tranEnv.addSignaturesBuilder();
+			signature.setPublicKey(srcPublic);
+			byte[] sign_data = account.sign(tran.build().toByteArray());
+			signature.setSignData(ByteString.copyFrom(sign_data));
+			
+			System.out.println("set signer weight hash: " + HashUtil.GenerateHashHex(tran.build().toByteArray(), hash_type));
+
+			// send transaction
+			chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, tranEnv.build().toByteArray());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+	}
+	
+	public void TestSetThreshold(String url, BubiKey3 account, Map<Operation.Type, Long> typeThresholds) {
+		try {
+			String srcAddress = account.getBubiAddress();
+			String srcPublic = account.getEncPublicKey();
+			
+			// get hash type
+			String getHello = url + "/hello";
+			String hello = HttpKit.post(getHello, "");
+			JSONObject ho = JSONObject.parseObject(hello);
+			Integer hash_type = ho.containsKey("hash_type") ? ho.getInteger("hash_type") : 0;
+						
+			String getAccount = url + "/getAccount?address=" + srcAddress;
+			String txSeq = HttpKit.post(getAccount, "");
+			JSONObject tx = JSONObject.parseObject(txSeq);
+			String seq_str = tx.getJSONObject("result").containsKey("nonce") ? tx.getJSONObject("result").getString("nonce") : "0";
+			long nonce = Long.parseLong(seq_str);
+					
+			// generate transaction
+			TransactionEnv.Builder tranEnv = TransactionEnv.newBuilder(); 
+			Transaction.Builder tran = tranEnv.getTransactionBuilder();
+			tran.setSourceAddress(srcAddress);
+			tran.setNonce(nonce + 1);
+			tran.setFee(500000);
+			
+		    // add operations
+			Operation.Builder oper = tran.addOperationsBuilder();
+			oper.setType(Operation.Type.SET_THRESHOLD);
+			OperationSetThreshold.Builder setMetadata = oper.getSetThresholdBuilder();
+			setMetadata.setTxThreshold(15);
+			for(Map.Entry<Operation.Type, Long> threshold : typeThresholds.entrySet()) {
+				OperationTypeThreshold.Builder typeThreshold = setMetadata.addTypeThresholdsBuilder();
+				typeThreshold.setType(threshold.getKey());
+				typeThreshold.setThreshold(threshold.getValue());
+			}
+			
+		    // add signature list
+			Signature.Builder signature  = tranEnv.addSignaturesBuilder();
+			signature.setPublicKey(srcPublic);
+			byte[] sign_data = account.sign(tran.build().toByteArray());
+			signature.setSignData(ByteString.copyFrom(sign_data));
+			
+			System.out.println("set threshold hash: " + HashUtil.GenerateHashHex(tran.build().toByteArray(), hash_type));
+
+			// send transaction
+			chain_message_one_.Send(Overlay.ChainMessageType.CHAIN_SUBMITTRANSACTION_VALUE, tranEnv.build().toByteArray());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
 	}
 	
 	class TestThread implements Runnable {
@@ -299,18 +490,42 @@ public class chain_test {
 		@Override
 		public void run() {
 			while(enabled_) {
-				System.out.println("===============================111111");
 				try {
 					Thread.sleep(5000);
+					// genesis
+					String url = "http://127.0.0.1:36002";
+					String privateKey = "privbtGQELqNswoyqgnQ9tcfpkuH8P1Q6quvoybqZ9oTVwWhS6Z2hi1B";
+					String publicKey = "b001b6d3120599d19cae7adb6c5e2674ede8629c871cb8b93bd05bb34d203cd974c3f0bc07e5";
+					String address = "buQdBdkvmAhnRrhLp4dmeCc2ft7RNE51c9EK";			
 					
-					String url = "http://127.0.0.1:29333";
-					String privateKey = "c00177e3fc95822f5d4c653a35b712421978e2998fa44a3ea3c6e4b7fe98b496f87fee";
-					String publicKey = "b0019798ea08b3286e1dac0c52f98c93388c946ee606878d2a538aaf7623aac5c9f8e1";
-					String address = "a002d8345b89dc34a57574eb497635ff125a3799fe77b6";
-					
-					TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ECCSM2, null, null, null);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
+					System.out.println("======================= create account one =======================");
+					BubiKey3 accountOne = TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ED25519, null, null, null);
+					Thread.sleep(10000);
+					System.out.println("\n===================== account one issue coin =====================");
+					TestIssue(url, accountOne);
+					Thread.sleep(10000);
+					System.out.println("\n\n======================= create account two =======================");
+					BubiKey3 accountTwo = TestCreateAccount(url, address, privateKey, publicKey, 10, 11, BubiKeyType.ED25519, null, null, null);
+					Thread.sleep(10000);
+					System.out.println("\n\n============= account one pay account two 10000 coin =============");
+					TestPayment(url, accountOne, accountTwo);
+					Thread.sleep(10000);
+					System.out.println("\n\n==================== account one set metadata ====================");
+					TestSetMetadata(url, accountOne, "coin", "hello world");
+					Thread.sleep(10000);
+					System.out.println("\n\n================= account one set signers weight =================");
+					Map<String, Long> signers = new HashMap<String, Long>();
+					signers.put(accountTwo.getBubiAddress(), 10L);
+					TestSetSignerWeight(url, accountOne, signers);
+					Thread.sleep(10000);
+					System.out.println("\n\n================= account one set type threshold =================");
+					Map<Operation.Type, Long> typeThresholds = new HashMap<Operation.Type, Long>();
+					typeThresholds.put(Operation.Type.CREATE_ACCOUNT, 15L);
+					typeThresholds.put(Operation.Type.ISSUE_ASSET, 8L);
+					typeThresholds.put(Operation.Type.SET_METADATA, 10L);
+					TestSetThreshold(url, accountOne, typeThresholds);
+					Thread.sleep(10000000);
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -327,3 +542,4 @@ public class chain_test {
 		}
 	}
 }
+

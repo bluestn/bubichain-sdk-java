@@ -70,7 +70,7 @@ public class BlockChainAdapter {
 		// start thread
 		public void run() {
 			if (!is_exit) {
-				logger_.error("already running");
+				System.out.println("already running");
 				return;
 			}
 			is_exit = false;
@@ -82,13 +82,13 @@ public class BlockChainAdapter {
 					block_chain_thread.start();
 					block_chain_thread.join();
 				} catch (Exception e) {
-					logger_.error("connect failed, " + e.getMessage());
+					System.out.println("connect failed, " + e.getMessage());
 				}
 				
 				try {
 					Thread.sleep(5000);
 				} catch (Exception e) {
-					logger_.error("sleep 5000 failed, " + e.getMessage());
+					System.out.println("sleep 5000 failed, " + e.getMessage());
 				}
 			}
 		}
@@ -102,14 +102,14 @@ public class BlockChainAdapter {
 				is_exit = true;
 				block_chain_.close();
 			} catch (Exception e) {
-				logger_.error("join failed, " + e.getMessage());
+				System.out.println("join failed, " + e.getMessage());
 			}
 		}
 		public void Join() {
 			try {
 				blockchain_manager_thhead.join();
 			} catch (InterruptedException e) {
-				logger_.error("BlockChainManager join error, " + e.getMessage());
+				System.out.println("BlockChainManager join error, " + e.getMessage());
 			}
 		}
 		
@@ -134,14 +134,14 @@ public class BlockChainAdapter {
 			
 			@Override
 			public void onError( Exception ex ) {
-				logger_.info( "Error: " + ex.getMessage());
+				System.out.println( "Error: " + ex.getMessage());
 			}
 
 			@Override
 			public void onOpen( ServerHandshake handshake ) {
 				is_connected_ = true;
 				heartbeat_time_ = System.currentTimeMillis();
-				logger_.info("open successful");
+				System.out.println("open successful");
 			}
 
 			@Override
@@ -151,7 +151,7 @@ public class BlockChainAdapter {
 				heartbeat_thread_.Join();
 				send_message_thread_.Stop();
 				send_message_thread_.Join();
-				logger_.error( "Closed: " + index_ + ", code:" + code + ", reason:" + reason );
+				System.out.println( "Closed: " + index_ + ", code:" + code + ", reason:" + reason );
 			}
 			
 			@Override
@@ -169,10 +169,10 @@ public class BlockChainAdapter {
 						response_handler_[type].ChainMethod(msg, msg.length);
 					}
 					else {
-						logger_.error( "onMessage:" + (request ? " request method" : " reponse method") + " (" + type + ")" + " does not exist");
+						System.out.println( "onMessage:" + (request ? " request method" : " reponse method") + " (" + type + ")" + " does not exist");
 					}
 				} catch (Exception e) {
-					logger_.error("onMessage: the message of receive is not WsMessage format");
+					System.out.println("onMessage: the message of receive is not WsMessage format");
 				}
 			}
 			
@@ -191,10 +191,10 @@ public class BlockChainAdapter {
 						response_handler_[type].ChainMethod(msg, msg.length);
 					}
 					else {
-						logger_.error( "onMessage:" + (request ? " request method" : " reponse method") + " (" + type + ")" + " does not exist");
+						System.out.println( "onMessage:" + (request ? " request method" : " reponse method") + " (" + type + ")" + " does not exist");
 					}
 				} catch (Exception e) {
-					logger_.error("the message of receive is not WsMessage format");
+					System.out.println("the message of receive is not WsMessage format");
 				}
 			}
 			
@@ -209,7 +209,7 @@ public class BlockChainAdapter {
 					SendMessage(blockchain_managers_.get(index_), Overlay.OVERLAY_MESSAGE_TYPE.OVERLAY_MSGTYPE_PING_VALUE, false, 
 							sequence_, pong.build().toByteArray());
 				} catch (InvalidProtocolBufferException e) {
-					logger_.error("OnRequestPing: parse ping data failed" + " (" + conn.getRemoteSocketAddress().getHostName() 
+					System.out.println("OnRequestPing: parse ping data failed" + " (" + conn.getRemoteSocketAddress().getHostName() 
 							+ ":" + conn.getRemoteSocketAddress().getPort() + ")");
 				}
 			}
@@ -222,7 +222,7 @@ public class BlockChainAdapter {
 					System.out.println("OnRequestPing: Recv pong from " + conn.getRemoteSocketAddress().getHostName() 
 							+ ":" + conn.getRemoteSocketAddress().getPort());
 				} catch (InvalidProtocolBufferException e) {
-					logger_.error("OnResponsePing: parse pong data failed" + " (" + conn.getRemoteSocketAddress().getHostName() 
+					System.out.println("OnResponsePing: parse pong data failed" + " (" + conn.getRemoteSocketAddress().getHostName() 
 							+ ":" + conn.getRemoteSocketAddress().getPort() + ")");
 				}
 			}
@@ -242,7 +242,7 @@ public class BlockChainAdapter {
 						try {
 							Thread.sleep(check_interval);
 						} catch (Exception ex) {
-							logger_.error("HeartbeatThread sleep failed, " + ex.getMessage());
+							System.out.println("HeartbeatThread sleep failed, " + ex.getMessage());
 						}
 						if (is_connected_) {
 							// send ping
@@ -258,7 +258,7 @@ public class BlockChainAdapter {
 							// check timeout
 							long current_time = System.currentTimeMillis();
 							if (current_time - heartbeat_time_ > connection_timeout_) {
-								logger_.error("connection time out"+ " (" + conn.getRemoteSocketAddress().getHostName() + 
+								System.out.println("connection time out"+ " (" + conn.getRemoteSocketAddress().getHostName() + 
 										":" + conn.getRemoteSocketAddress().getPort() + ")");
 								close();
 							}
@@ -272,7 +272,7 @@ public class BlockChainAdapter {
 					try {
 						heartbeat_message_thread_.join();
 					} catch (InterruptedException e) {
-						logger_.error("HeartbeatThread join error, " + e.getMessage());
+						System.out.println("HeartbeatThread join error, " + e.getMessage());
 					}
 				}
 			}
@@ -304,12 +304,12 @@ public class BlockChainAdapter {
 							send(send_message.toByteArray());
 						}
 						catch(Exception e) {
-							logger_.error("HeartbeatThread send failed, " + e.getMessage());
+							System.out.println("HeartbeatThread send failed, " + e.getMessage());
 							send_queue_.add(send_message);
 							try {
 								Thread.sleep(3000);
 							} catch (Exception ex) {
-								logger_.error("HeartbeatThread sleep failed, " + ex.getMessage());
+								System.out.println("HeartbeatThread sleep failed, " + ex.getMessage());
 							}
 						}
 					}
@@ -325,7 +325,7 @@ public class BlockChainAdapter {
 						send_message.setType(-1);
 						send_queue_.put(send_message.build());
 					} catch (InterruptedException e) {
-						logger_.error("MessageThread Stop Error, " + e.getMessage());
+						System.out.println("MessageThread Stop Error, " + e.getMessage());
 					}
 				}
 				
@@ -333,7 +333,7 @@ public class BlockChainAdapter {
 					try {
 						send_message_thread_.join();
 					} catch (InterruptedException e) {
-						logger_.error("SendMessageThread join error, " + e.getMessage());
+						System.out.println("SendMessageThread join error, " + e.getMessage());
 					}
 				}
 				
@@ -385,7 +385,7 @@ public class BlockChainAdapter {
 		do {
 			try {
 				if (!IsConnected()) {
-					logger_.error("disconnected");
+					System.out.println("disconnected");
 					bret = false;
 					break;
 				}
@@ -394,14 +394,14 @@ public class BlockChainAdapter {
 					BlockChainManager blockchain_manager = blockchain_managers_.get(i);
 					if (blockchain_manager.IsConnected()) {
 						if (!SendMessage(blockchain_manager, type, true, blockchain_manager.sequence_, msg)) {
-							logger_.error("add send queue failed");
+							System.out.println("add send queue failed");
 						}
 					}
 				}
 				
 				bret =  true;
 			} catch(Exception e) {
-				logger_.error("add message failed, " + e.getMessage());
+				System.out.println("add message failed, " + e.getMessage());
 			}
 		} while (false);
 		
